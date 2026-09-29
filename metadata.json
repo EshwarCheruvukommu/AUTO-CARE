@@ -1,0 +1,6 @@
+{
+  "name": "AutoCare",
+  "description": "Your Vehicle's Personal Maintenance Manager. Track vehicles, documents, maintenance history, and expenses in one centralized dashboard.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

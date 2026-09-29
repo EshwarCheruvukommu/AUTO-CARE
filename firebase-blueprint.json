@@ -1,0 +1,165 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile stored in Firestore",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "photoURL": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["uid", "name", "email", "createdAt", "updatedAt"]
+    },
+    "Vehicle": {
+      "title": "Vehicle",
+      "description": "Vehicle registered by user",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "vehicleNumber": { "type": "string" },
+        "brand": { "type": "string" },
+        "model": { "type": "string" },
+        "variant": { "type": "string" },
+        "fuelType": { "type": "string" },
+        "purchaseDate": { "type": "string" },
+        "currentOdometer": { "type": "number" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "name", "vehicleNumber", "brand", "model", "fuelType", "purchaseDate", "currentOdometer", "createdAt", "updatedAt"]
+    },
+    "VehicleDocument": {
+      "title": "VehicleDocument",
+      "description": "Vehicle document record such as insurance, PUC, RC",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "vehicleId": { "type": "string" },
+        "type": { "type": "string" },
+        "documentNumber": { "type": "string" },
+        "issueDate": { "type": "string" },
+        "expiryDate": { "type": "string" },
+        "fileName": { "type": "string" },
+        "fileUrl": { "type": "string" },
+        "storagePath": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "vehicleId", "type", "documentNumber", "issueDate", "expiryDate", "createdAt", "updatedAt"]
+    },
+    "ServiceRecord": {
+      "title": "ServiceRecord",
+      "description": "Vehicle maintenance and service log record",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "vehicleId": { "type": "string" },
+        "serviceType": { "type": "string" },
+        "serviceDate": { "type": "string" },
+        "odometer": { "type": "number" },
+        "cost": { "type": "number" },
+        "serviceCenter": { "type": "string" },
+        "description": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "vehicleId", "serviceType", "serviceDate", "odometer", "cost", "createdAt", "updatedAt"]
+    },
+    "FuelRecord": {
+      "title": "FuelRecord",
+      "description": "Vehicle refuel and mileage tracking log",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "vehicleId": { "type": "string" },
+        "fuelDate": { "type": "string" },
+        "odometer": { "type": "number" },
+        "fuelType": { "type": "string" },
+        "litres": { "type": "number" },
+        "pricePerLitre": { "type": "number" },
+        "totalCost": { "type": "number" },
+        "station": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "vehicleId", "fuelDate", "odometer", "fuelType", "totalCost", "createdAt", "updatedAt"]
+    },
+    "Expense": {
+      "title": "Expense",
+      "description": "Vehicle general expense log",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "vehicleId": { "type": "string" },
+        "expenseDate": { "type": "string" },
+        "category": { "type": "string" },
+        "amount": { "type": "number" },
+        "description": { "type": "string" },
+        "vendor": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "vehicleId", "expenseDate", "category", "amount", "description", "createdAt", "updatedAt"]
+    },
+    "Reminder": {
+      "title": "Reminder",
+      "description": "Vehicle reminder and deadline notification record",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "vehicleId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "reminderType": { "type": "string" },
+        "dueDate": { "type": "string" },
+        "status": { "type": "string" },
+        "priority": { "type": "string" },
+        "sourceType": { "type": "string" },
+        "sourceId": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "completedAt": { "type": "string" }
+      },
+      "required": ["userId", "vehicleId", "title", "reminderType", "dueDate", "status", "priority", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/vehicles/{vehicleId}": {
+      "schema": "Vehicle",
+      "description": "User vehicles"
+    },
+    "/documents/{docId}": {
+      "schema": "VehicleDocument",
+      "description": "Vehicle documents"
+    },
+    "/serviceRecords/{recordId}": {
+      "schema": "ServiceRecord",
+      "description": "Vehicle service and maintenance records"
+    },
+    "/fuelRecords/{recordId}": {
+      "schema": "FuelRecord",
+      "description": "Vehicle fuel records"
+    },
+    "/expenses/{expenseId}": {
+      "schema": "Expense",
+      "description": "Vehicle expense records"
+    },
+    "/reminders/{reminderId}": {
+      "schema": "Reminder",
+      "description": "Vehicle reminders and notifications"
+    }
+  }
+}
