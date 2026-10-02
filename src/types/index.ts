@@ -178,3 +178,45 @@ export interface ReminderNotification {
   vehicleId?: string;
   actionUrl?: string;
 }
+
+export interface FeedbackSubmission {
+  id?: string;
+  userId: string;
+  submittedAt: string;
+  easeOfUse: string;
+  mostUsefulFeature: string;
+  fuelExpenseHelpful: string;
+  maintenanceRemindersHelpful: string;
+  documentManagementHelpful: string;
+  multipleVehiclesInterest: string;
+  additionalFeatureRequest: string;
+  improvementSuggestions: string;
+  appVersion?: string;
+  devicePlatform?: string;
+}
+
+export interface FAQItem {
+  id: string;
+  question: string;
+  answer: string;
+  category?: string;
+}
+
+export interface CustomMaintenanceRule {
+  id: string;
+  userId: string;
+  vehicleId?: string; // vehicle-specific or applies to all
+  name: string;
+  category: 'Fluids' | 'Filters' | 'Tyres & Brakes' | 'Electrical' | 'Engine & Transmission' | 'General';
+  intervalKm: number;
+  intervalMonths?: number;
+  startingOdometer?: number;
+  lastServiceOdometer?: number;
+  lastServiceDate?: string;
+  enabled?: boolean;
+  ruleType?: 'whichever_first' | 'km_only' | 'time_only';
+  source: 'Manufacturer' | 'Service Center' | 'Personal' | 'Custom';
+  description?: string;
+  createdAt: string;
+  updatedAt?: string;
+}

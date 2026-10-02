@@ -22,14 +22,65 @@ import {
   Info,
   Loader2,
   Sparkles,
-  ShieldCheck
+  ShieldCheck,
+  MessageSquareHeart,
+  HelpCircle,
+  Download,
+  HardDrive,
+  Check,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { collection, query, where, getCountFromServer, getDocs } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { useAuth } from '../../context/AuthContext';
+import { useVehicle } from '../../context/VehicleContext';
+import { useTheme } from '../../context/ThemeContext';
+import { SectionVisualHeader } from '../common/SectionVisualHeader';
+import { exportFullAccountBackupJSON, exportServicesToCSV, exportFuelToCSV, exportExpensesToCSV } from '../../utils/exportReport';
 
 export const ProfileView: React.FC = () => {
   const { userProfile, currentUser, updateUserProfile, resetPassword, changePassword, logout } = useAuth();
+  const { theme, setTheme } = useTheme();
+  const { 
+    vehicles, 
+    documents, 
+    services, 
+    fuelRecords, 
+    expenses, 
+    allReminders, 
+    customRules,
+    selectedVehicle 
+  } = useVehicle();
+
+  // Export State
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportSuccessMessage, setExportSuccessMessage] = useState<string | null>(null);
+  const [exportErrorMessage, setExportErrorMessage] = useState<string | null>(null);
+
+  const handleExportJSON = async () => {
+    try {
+      setIsExporting(true);
+      setExportErrorMessage(null);
+      exportFullAccountBackupJSON({
+        userEmail: currentUser?.email,
+        vehicles,
+        services,
+        fuelRecords,
+        expenses,
+        documents,
+        reminders: allReminders,
+        customRules,
+      });
+      setExportSuccessMessage(`Backup exported successfully (${vehicles.length} vehicles, ${services.length} services, ${fuelRecords.length} fuel logs).`);
+      setTimeout(() => setExportSuccessMessage(null), 5000);
+    } catch (err: any) {
+      console.error('Export failed:', err);
+      setExportErrorMessage(err?.message || 'Failed to export backup file.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   // Profile Form States
   const [displayName, setDisplayName] = useState(userProfile?.name || currentUser?.displayName || '');
@@ -272,17 +323,21 @@ export const ProfileView: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-16">
-      {/* Page Title & Overview */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-black tracking-tight text-white flex items-center gap-3">
-            <span>Profile &amp; Settings</span>
-          </h1>
-          <p className="text-sm text-gray-400 mt-1">
-            Manage your personal credentials, preferences, vehicle security, and account summary.
-          </p>
-        </div>
-      </div>
+      {/* 3D Section Visual Header */}
+      <SectionVisualHeader
+        sectionId="profile"
+        customTitle="Account, Security & Data Vault"
+        customTagline="Manage personal credentials, preferences, complete account backup, and security rules."
+        rightAction={
+          <button
+            onClick={logout}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#1D232B] hover:bg-red-500/20 text-gray-300 hover:text-red-400 font-semibold text-xs border border-[#252C35] hover:border-red-500/40 transition-all cursor-pointer btn-3d"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span>Sign Out</span>
+          </button>
+        }
+      />
 
       {/* ================================================== */}
       {/* 1. PROFILE HERO / IDENTITY CARD */}
@@ -672,19 +727,51 @@ export const ProfileView: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Theme Preference */}
-          <div className="p-5 rounded-2xl bg-[#0a0d14] border border-gray-800 space-y-2.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-gray-400">
-                Application Theme
-              </span>
-              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
-                Dark Automotive
-              </span>
+          {/* Theme Preference (Accessible, Simple, Not 3D) */}
+          <div className="p-5 rounded-2xl bg-[#0a0d14] border border-gray-800 space-y-3 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs font-bold uppercase tracking-wider text-gray-400">
+                  Application Theme
+                </span>
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+                  {theme === 'dark' ? 'Dark Automotive' : 'Clean Light'}
+                </span>
+              </div>
+              <p className="text-xs text-gray-300">
+                Choose between dark automotive theme for night viewing or high-contrast clean light theme.
+              </p>
             </div>
-            <p className="text-xs text-gray-300">
-              High-contrast near-black theme with electric blue accents designed for vehicle management and reduced eye strain.
-            </p>
+            
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setTheme('dark')}
+                aria-pressed={theme === 'dark'}
+                className={`p-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                  theme === 'dark'
+                    ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 shadow-md shadow-cyan-950/40 ring-1 ring-cyan-500/30'
+                    : 'bg-gray-900 border-gray-800 text-gray-400 hover:text-white hover:border-gray-700'
+                }`}
+              >
+                <Moon className="w-4 h-4 text-indigo-400" />
+                <span>🌙 Dark Mode</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setTheme('light')}
+                aria-pressed={theme === 'light'}
+                className={`p-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                  theme === 'light'
+                    ? 'bg-amber-500/20 border-amber-400 text-amber-300 shadow-md shadow-amber-950/40 ring-1 ring-amber-500/30'
+                    : 'bg-gray-900 border-gray-800 text-gray-400 hover:text-white hover:border-gray-700'
+                }`}
+              >
+                <Sun className="w-4 h-4 text-amber-400" />
+                <span>☀️ Light Mode</span>
+              </button>
+            </div>
           </div>
 
           {/* In-App Notifications Preference */}
@@ -738,7 +825,169 @@ export const ProfileView: React.FC = () => {
       </div>
 
       {/* ================================================== */}
-      {/* 7. APPLICATION INFORMATION (About AutoCare) */}
+      {/* 7. EXPORT & BACKUP (Bug #6 & Requirement 3) */}
+      {/* ================================================== */}
+      <div className="p-6 sm:p-8 rounded-3xl bg-[#0f131c] border border-gray-800/80 space-y-5">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-cyan-950/70 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+              <HardDrive className="w-4 h-4 text-cyan-400" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-white">Export &amp; Backup</h3>
+              <p className="text-xs text-gray-400">
+                Download an offline backup of your vehicles, service history, fuel records, expenses, and reminders.
+              </p>
+            </div>
+          </div>
+          <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+            Offline JSON Backup
+          </span>
+        </div>
+
+        {/* Success Message Banner */}
+        {exportSuccessMessage && (
+          <div className="p-3.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs sm:text-sm font-semibold flex items-center gap-2 animate-in fade-in">
+            <Check className="w-4 h-4 shrink-0 text-emerald-400" />
+            <span>{exportSuccessMessage}</span>
+          </div>
+        )}
+
+        {/* Error Message Banner */}
+        {exportErrorMessage && (
+          <div className="p-3.5 rounded-xl bg-red-500/15 border border-red-500/30 text-red-400 text-xs sm:text-sm font-semibold flex items-center gap-2 animate-in fade-in">
+            <AlertTriangle className="w-4 h-4 shrink-0 text-red-400" />
+            <span>{exportErrorMessage}</span>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+          {/* Main JSON Full Backup Card */}
+          <div className="p-5 rounded-2xl bg-[#0a0d14] border border-gray-800 flex flex-col justify-between gap-4">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2 text-white font-bold text-sm">
+                <Download className="w-4 h-4 text-cyan-400" />
+                <span>Complete AutoCare Data Backup (JSON)</span>
+              </div>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                Includes all registered vehicles, service history, fuel stops, expenses, documents, reminders, and custom maintenance rules strictly isolated to your authenticated account.
+              </p>
+              <div className="text-[11px] text-gray-500 font-mono pt-1">
+                Output: AutoCare_Backup_YYYY-MM-DD.json
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleExportJSON}
+              disabled={isExporting}
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-xs shadow-lg shadow-cyan-500/20 flex items-center gap-2 transition-all cursor-pointer self-start disabled:opacity-50"
+            >
+              {isExporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+              <span>{isExporting ? 'Generating Backup...' : 'Download JSON Backup'}</span>
+            </button>
+          </div>
+
+          {/* Active Vehicle CSV Exports Card */}
+          <div className="p-5 rounded-2xl bg-[#0a0d14] border border-gray-800 flex flex-col justify-between gap-4">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2 text-white font-bold text-sm">
+                <FileText className="w-4 h-4 text-purple-400" />
+                <span>Active Vehicle Spreadsheets (CSV)</span>
+              </div>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                Download spreadsheet-ready CSV files for {selectedVehicle ? selectedVehicle.name : 'your active vehicle'} to open in Microsoft Excel, Apple Numbers, or Google Sheets.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap pt-1">
+              <button
+                type="button"
+                onClick={() => selectedVehicle && exportServicesToCSV(selectedVehicle, services)}
+                disabled={!selectedVehicle || services.length === 0}
+                className="px-3 py-1.5 rounded-lg bg-gray-900 hover:bg-gray-800 border border-gray-700/80 text-[11px] font-semibold text-gray-300 hover:text-white transition-all disabled:opacity-40 cursor-pointer"
+              >
+                Services CSV
+              </button>
+              <button
+                type="button"
+                onClick={() => selectedVehicle && exportFuelToCSV(selectedVehicle, fuelRecords)}
+                disabled={!selectedVehicle || fuelRecords.length === 0}
+                className="px-3 py-1.5 rounded-lg bg-gray-900 hover:bg-gray-800 border border-gray-700/80 text-[11px] font-semibold text-gray-300 hover:text-white transition-all disabled:opacity-40 cursor-pointer"
+              >
+                Fuel CSV
+              </button>
+              <button
+                type="button"
+                onClick={() => selectedVehicle && exportExpensesToCSV(selectedVehicle, expenses)}
+                disabled={!selectedVehicle || expenses.length === 0}
+                className="px-3 py-1.5 rounded-lg bg-gray-900 hover:bg-gray-800 border border-gray-700/80 text-[11px] font-semibold text-gray-300 hover:text-white transition-all disabled:opacity-40 cursor-pointer"
+              >
+                Expenses CSV
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ================================================== */}
+      {/* 8. SUPPORT, FAQ & FEEDBACK */}
+      {/* ================================================== */}
+      <div className="p-6 sm:p-8 rounded-3xl bg-[#0f131c] border border-gray-800/80 space-y-4">
+        <div className="flex items-center gap-2">
+          <HelpCircle className="w-4 h-4 text-cyan-400" />
+          <h3 className="text-lg font-bold text-white">Support &amp; Community</h3>
+        </div>
+
+        <p className="text-xs text-gray-400 leading-relaxed">
+          Need assistance or want to suggest improvements? Browse our guide or help us improve AutoCare.
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+          <div className="p-4 rounded-2xl bg-[#121622] border border-gray-800/80 flex flex-col justify-between gap-3">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-white font-bold text-sm">
+                <HelpCircle className="w-4 h-4 text-cyan-400" />
+                <span>Frequently Asked Questions</span>
+              </div>
+              <p className="text-xs text-gray-400">
+                Detailed guides on fuel calculations, maintenance reminders, document vaults, and multi-vehicle setups.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent('autocare:open_faq'))}
+              className="px-4 py-2 rounded-xl bg-gray-900 hover:bg-gray-800 border border-cyan-500/30 text-cyan-300 hover:text-white text-xs font-bold transition-all cursor-pointer self-start flex items-center gap-1.5"
+            >
+              <span>View FAQ &amp; Guide</span>
+              <span>→</span>
+            </button>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-[#121622] border border-gray-800/80 flex flex-col justify-between gap-3">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-white font-bold text-sm">
+                <MessageSquareHeart className="w-4 h-4 text-pink-400" />
+                <span>Product Feedback Form</span>
+              </div>
+              <p className="text-xs text-gray-400">
+                Tell us which features you find most useful and what tools you would love to see next in AutoCare.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent('autocare:open_feedback'))}
+              className="px-4 py-2 rounded-xl bg-pink-500/10 hover:bg-pink-500/20 border border-pink-500/30 text-pink-300 hover:text-white text-xs font-bold transition-all cursor-pointer self-start flex items-center gap-1.5"
+            >
+              <MessageSquareHeart className="w-3.5 h-3.5" />
+              <span>Share Feedback</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ================================================== */}
+      {/* 8. APPLICATION INFORMATION (About AutoCare) */}
       {/* ================================================== */}
       <div className="p-6 sm:p-8 rounded-3xl bg-[#0f131c] border border-gray-800/80 space-y-4">
         <div className="flex items-center justify-between">

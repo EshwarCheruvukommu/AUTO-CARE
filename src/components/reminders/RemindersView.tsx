@@ -18,12 +18,15 @@ import {
   FileText, 
   Droplet,
   Tag,
-  RotateCcw
+  RotateCcw,
+  Search,
+  ArrowUpDown
 } from 'lucide-react';
 import { VehicleReminder, ReminderType } from '../../types';
 import { useVehicle } from '../../context/VehicleContext';
 import { ReminderModal } from './ReminderModal';
 import { ConfirmDialog } from '../common/Modal';
+import { SectionVisualHeader } from '../common/SectionVisualHeader';
 import { formatDate, getReminderStatus } from '../../utils/formatters';
 
 interface RemindersViewProps {
@@ -60,6 +63,8 @@ export const RemindersView: React.FC<RemindersViewProps> = ({ onNavigateTab }) =
   const [editingReminder, setEditingReminder] = useState<VehicleReminder | null>(null);
   const [deletingReminderId, setDeletingReminderId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortOrder, setSortOrder] = useState<'due_asc' | 'due_desc'>('due_asc');
 
   const handleAdd = async (data: any) => {
     await addReminder(data);
@@ -84,18 +89,34 @@ export const RemindersView: React.FC<RemindersViewProps> = ({ onNavigateTab }) =
     }
   };
 
-  // Filter reminders based on tab selection
+  // Filter reminders based on tab selection, search query, and sort order
   const filteredReminders = useMemo(() => {
-    return allReminders.filter((r) => {
+    let result = allReminders.filter((r) => {
       const { dynamicStatus } = getReminderStatus(r.dueDate, r.status, r.completedAt);
-      if (activeTab === 'all') return true;
-      if (activeTab === 'pending') return dynamicStatus !== 'Completed';
-      if (activeTab === 'dueSoon') return dynamicStatus === 'Due Soon';
-      if (activeTab === 'overdue') return dynamicStatus === 'Overdue';
-      if (activeTab === 'completed') return dynamicStatus === 'Completed';
+      if (activeTab === 'pending' && dynamicStatus === 'Completed') return false;
+      if (activeTab === 'dueSoon' && dynamicStatus !== 'Due Soon') return false;
+      if (activeTab === 'overdue' && dynamicStatus !== 'Overdue') return false;
+      if (activeTab === 'completed' && dynamicStatus !== 'Completed') return false;
+
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const titleMatch = (r.title || '').toLowerCase().includes(q);
+        const descMatch = (r.description || '').toLowerCase().includes(q);
+        const typeMatch = (r.reminderType || '').toLowerCase().includes(q);
+        return titleMatch || descMatch || typeMatch;
+      }
+
       return true;
     });
-  }, [allReminders, activeTab]);
+
+    result.sort((a, b) => {
+      const dateA = new Date(a.dueDate || '').getTime();
+      const dateB = new Date(b.dueDate || '').getTime();
+      return sortOrder === 'due_asc' ? dateA - dateB : dateB - dateA;
+    });
+
+    return result;
+  }, [allReminders, activeTab, searchQuery, sortOrder]);
 
   if (!selectedVehicle) {
     return (
@@ -113,34 +134,22 @@ export const RemindersView: React.FC<RemindersViewProps> = ({ onNavigateTab }) =
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
-        <div>
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <h1 className="text-2xl font-black tracking-tight text-white flex items-center gap-2">
-              <Bell className="w-6 h-6 text-cyan-400" />
-              <span>Reminders & Notifications</span>
-            </h1>
-            <span className="text-xs px-2.5 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 font-semibold">
-              {allReminders.length} total
-            </span>
-            <span className="text-xs px-2.5 py-1 rounded-full bg-gray-800/80 border border-gray-700 text-gray-300">
-              🚗 {selectedVehicle.name} ({selectedVehicle.vehicleNumber})
-            </span>
-          </div>
-          <p className="text-sm text-gray-400 mt-1">
-            Automated alerts for Insurance, PUC, maintenance tasks, and custom vehicle reminders.
-          </p>
-        </div>
-
-        <button
-          onClick={() => setIsAddOpen(true)}
-          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-semibold text-sm shadow-lg shadow-cyan-500/20 transition-all cursor-pointer self-start sm:self-auto"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add Reminder</span>
-        </button>
-      </div>
+      {/* 3D Section Visual Header */}
+      <SectionVisualHeader
+        sectionId="reminders"
+        customTitle="Preventative Reminders & Deadlines"
+        customTagline="Prioritized telemetry alerts (Overdue, Due Soon, Scheduled) with automatic duplicate prevention."
+        activeVehicleInfo={`${selectedVehicle.name} • ${selectedVehicle.vehicleNumber}`}
+        rightAction={
+          <button
+            onClick={() => setIsAddOpen(true)}
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#FFB020] via-amber-500 to-orange-500 hover:from-[#FFB020] hover:to-amber-400 text-black font-bold text-sm shadow-lg shadow-[#FFB020]/20 transition-all cursor-pointer btn-3d"
+          >
+            <Plus className="w-4 h-4 text-black" />
+            <span>Add Reminder</span>
+          </button>
+        }
+      />
 
       {/* Summary Metrics Row (Section 13) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -298,6 +307,41 @@ export const RemindersView: React.FC<RemindersViewProps> = ({ onNavigateTab }) =
           Completed ({reminderSummary.completed})
         </button>
       </div>
+
+      {/* Search & Sort Bar for Reminders */}
+      {allReminders.length > 0 && (
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3 rounded-2xl bg-[#0d1017] border border-gray-800">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search reminders by title, type, or notes..."
+              className="w-full bg-[#121622] border border-gray-800 focus:border-cyan-500/50 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none transition-colors"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 hover:text-white"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setSortOrder(prev => prev === 'due_asc' ? 'due_desc' : 'due_asc')}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gray-900 hover:bg-gray-800 border border-gray-800 text-xs font-semibold text-gray-300 hover:text-white transition-colors cursor-pointer shrink-0"
+              title="Toggle Due Date Sort Order"
+            >
+              <ArrowUpDown className="w-3.5 h-3.5 text-cyan-400" />
+              <span>{sortOrder === 'due_asc' ? 'Due Date: Earliest First' : 'Due Date: Latest First'}</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Reminder Cards Content */}
       {loadingReminders ? (

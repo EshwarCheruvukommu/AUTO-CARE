@@ -14,14 +14,21 @@ import {
   TrendingUp, 
   Droplet,
   Layers,
-  FileText
+  FileText,
+  Compass,
+  Download,
+  Search,
+  ArrowUpDown
 } from 'lucide-react';
 import { FuelRecord, FuelRecordType } from '../../types';
 import { useVehicle } from '../../context/VehicleContext';
 import { FuelModal } from './FuelModal';
+import { TripPlannerModal } from './TripPlannerModal';
 import { ConfirmDialog } from '../common/Modal';
-import { formatCurrency, formatOdometer, formatDate } from '../../utils/formatters';
+import { SectionVisualHeader } from '../common/SectionVisualHeader';
+import { formatCurrency, formatOdometer, formatDate, formatPricePerLitre } from '../../utils/formatters';
 import { calculateFuelMetrics } from '../../utils/mileage';
+import { exportFuelToCSV } from '../../utils/exportReport';
 
 export const FuelView: React.FC = () => {
   const { 
@@ -30,15 +37,40 @@ export const FuelView: React.FC = () => {
     loadingFuelRecords, 
     addFuelRecord, 
     updateFuelRecord, 
-    deleteFuelRecord 
+    deleteFuelRecord,
+    documents,
+    allReminders
   } = useVehicle();
 
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isTripPlannerOpen, setIsTripPlannerOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<FuelRecord | null>(null);
   const [deletingRecordId, setDeletingRecordId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
+
+  const filteredFuelRecords = React.useMemo(() => {
+    let result = fuelRecords.filter((rec) => {
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase();
+      const dateMatches = (rec.fuelDate || '').toLowerCase().includes(q);
+      const fuelTypeMatches = (rec.fuelType || '').toLowerCase().includes(q);
+      const notesMatches = (rec.notes || '').toLowerCase().includes(q);
+      const stationMatches = (rec.station || '').toLowerCase().includes(q);
+      return dateMatches || fuelTypeMatches || notesMatches || stationMatches;
+    });
+
+    result.sort((a, b) => {
+      const dateA = new Date(a.fuelDate || '').getTime();
+      const dateB = new Date(b.fuelDate || '').getTime();
+      return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
+    });
+
+    return result;
+  }, [fuelRecords, searchQuery, sortOrder]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -170,40 +202,43 @@ export const FuelView: React.FC = () => {
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-gray-800/60">
-        <div>
-          <h1 className="text-3xl font-black tracking-tight text-white flex items-center gap-2.5">
-            <span>Fuel & Mileage</span>
-            <span className="text-sm font-normal text-gray-400 bg-gray-900 px-2.5 py-0.5 rounded-full border border-gray-800">
-              {totalEntriesCount}
-            </span>
-          </h1>
+      {/* 3D Section Visual Header */}
+      <SectionVisualHeader
+        sectionId="fuel"
+        customTitle="Fuel & Mileage Intelligence"
+        customTagline="Consecutive consumption tracking, interval fuel efficiency (km/L), and price-per-litre telemetry."
+        activeVehicleInfo={`${selectedVehicle.name} • ${selectedVehicle.vehicleNumber} • ${formatOdometer(selectedVehicle.currentOdometer)}`}
+        rightAction={
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <button
+              onClick={() => exportFuelToCSV(selectedVehicle, fuelRecords)}
+              disabled={fuelRecords.length === 0}
+              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-[#1D232B] hover:bg-[#252C35] border border-[#252C35] text-gray-300 hover:text-white font-semibold text-xs transition-all disabled:opacity-40 cursor-pointer btn-3d"
+              title="Export Fuel History to CSV"
+            >
+              <Download className="w-3.5 h-3.5 text-[#00D4C7]" />
+              <span>Export CSV</span>
+            </button>
 
-          {/* Current Vehicle Context Badge */}
-          <div className="mt-2 flex items-center gap-3 text-sm text-gray-300">
-            <span className="font-bold text-white flex items-center gap-1.5">
-              <Car className="w-4 h-4 text-cyan-400" />
-              <span>{selectedVehicle.name}</span>
-            </span>
-            <span className="text-gray-600">•</span>
-            <span className="font-mono text-cyan-400 font-semibold flex items-center gap-1">
-              <Gauge className="w-3.5 h-3.5" />
-              <span>{formatOdometer(selectedVehicle.currentOdometer)}</span>
-            </span>
-            <span className="text-gray-600">•</span>
-            <span className="text-gray-400 font-mono text-xs">{selectedVehicle.vehicleNumber}</span>
+            <button
+              onClick={() => setIsTripPlannerOpen(true)}
+              className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#1D232B] hover:bg-[#252C35] border border-[#00D4C7]/40 text-[#00D4C7] hover:text-white font-bold text-xs shadow-md transition-all cursor-pointer btn-3d"
+              title="Open Trip Planner & Fuel Estimator"
+            >
+              <Compass className="w-4 h-4 text-[#00D4C7]" />
+              <span>Trip Planner</span>
+            </button>
+
+            <button
+              onClick={() => setIsAddOpen(true)}
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#00D4C7] via-cyan-500 to-blue-600 hover:from-[#00D4C7] hover:to-blue-500 text-black hover:text-white font-bold text-sm shadow-lg shadow-[#00D4C7]/20 transition-all cursor-pointer btn-3d"
+            >
+              <Plus className="w-4 h-4 text-black group-hover:text-white" />
+              <span>Add Fuel Entry</span>
+            </button>
           </div>
-        </div>
-
-        <button
-          onClick={() => setIsAddOpen(true)}
-          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-sm shadow-lg shadow-cyan-500/20 transition-all cursor-pointer self-start sm:self-auto"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add Fuel Entry</span>
-        </button>
-      </div>
+        }
+      />
 
       {/* Dynamic Summary Cards (Calculated dynamically from Firestore data) */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5">
@@ -283,6 +318,41 @@ export const FuelView: React.FC = () => {
       </div>
 
       {/* Main Content: Loading, Empty State, or Fuel Cards List */}
+      {/* Search & Sort Bar for Fuel Records */}
+      {fuelRecords.length > 0 && (
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3 rounded-2xl bg-[#0d1017] border border-gray-800">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search fuel entries by date, fuel type, station, notes..."
+              className="w-full bg-[#121622] border border-gray-800 focus:border-cyan-500/50 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none transition-colors"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 hover:text-white"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setSortOrder(prev => prev === 'newest' ? 'oldest' : 'newest')}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gray-900 hover:bg-gray-800 border border-gray-800 text-xs font-semibold text-gray-300 hover:text-white transition-colors cursor-pointer shrink-0"
+              title="Toggle Date Sort Order"
+            >
+              <ArrowUpDown className="w-3.5 h-3.5 text-cyan-400" />
+              <span>{sortOrder === 'newest' ? 'Newest First' : 'Oldest First'}</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {loadingFuelRecords ? (
         <div className="flex flex-col items-center justify-center min-h-[300px] text-gray-400 space-y-3">
           <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-cyan-400" />
@@ -308,9 +378,13 @@ export const FuelView: React.FC = () => {
             + Add Fuel Entry
           </button>
         </div>
+      ) : filteredFuelRecords.length === 0 ? (
+        <div className="rounded-2xl border border-gray-800 bg-[#0d1017] p-8 text-center text-xs text-gray-400">
+          No fuel entries match your search query. <button onClick={() => setSearchQuery('')} className="text-cyan-400 underline font-semibold ml-1">Reset Search</button>
+        </div>
       ) : (
         <div className="space-y-4">
-          {fuelRecords.map((record) => {
+          {filteredFuelRecords.map((record) => {
             const intervalMileage = recordMileageMap[record.id];
 
             return (
@@ -347,19 +421,25 @@ export const FuelView: React.FC = () => {
                       )}
                     </div>
 
-                    {/* Fuel Quantity & Unit Price */}
+                    {/* Fuel Quantity & Unit Price (Bug #1 Dynamic Recalculation) */}
                     {record.fuelType !== 'EV Charging' && record.litres ? (
                       <div className="flex items-center gap-3 text-xs text-gray-300 font-mono">
                         <span className="text-amber-400 font-bold flex items-center gap-1">
                           <Droplet className="w-3.5 h-3.5 text-amber-500" />
                           <span>{record.litres} L</span>
                         </span>
-                        {record.pricePerLitre && (
-                          <>
-                            <span className="text-gray-600">•</span>
-                            <span className="text-gray-400">₹{record.pricePerLitre}/L</span>
-                          </>
-                        )}
+                        {(() => {
+                          const unitPrice = formatPricePerLitre(record.totalCost, record.litres, record.pricePerLitre);
+                          if (unitPrice && unitPrice !== '—') {
+                            return (
+                              <>
+                                <span className="text-gray-600">•</span>
+                                <span className="text-gray-400">{unitPrice}</span>
+                              </>
+                            );
+                          }
+                          return null;
+                        })()}
                       </div>
                     ) : null}
 
@@ -439,6 +519,18 @@ export const FuelView: React.FC = () => {
           currentVehicleOdometer={selectedVehicle.currentOdometer}
           vehicleFuelType={selectedVehicle.fuelType}
           title="Edit Fuel Entry"
+        />
+      )}
+
+      {/* Trip Planner Modal */}
+      {isTripPlannerOpen && selectedVehicle && (
+        <TripPlannerModal
+          isOpen={isTripPlannerOpen}
+          onClose={() => setIsTripPlannerOpen(false)}
+          vehicle={selectedVehicle}
+          fuelRecords={fuelRecords}
+          documents={documents}
+          allReminders={allReminders}
         />
       )}
 

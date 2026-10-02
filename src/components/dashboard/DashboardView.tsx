@@ -23,7 +23,10 @@ import {
   Shield,
   Activity,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  History,
+  Printer,
+  Download
 } from 'lucide-react';
 import { useVehicle } from '../../context/VehicleContext';
 import { 
@@ -35,6 +38,10 @@ import {
   getReminderStatus 
 } from '../../utils/formatters';
 import { calculateFuelMetrics } from '../../utils/mileage';
+import { printVehicleMaintenanceReport, exportVehicleDataJSON } from '../../utils/exportReport';
+import { VehicleTimelineView } from '../common/VehicleTimelineView';
+import { Automotive3DHero } from './Automotive3DHero';
+import { Card3D } from '../common/Card3D';
 
 // Modals for Quick Actions
 import { DocumentModal } from '../documents/DocumentModal';
@@ -81,6 +88,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [isAddFuelOpen, setIsAddFuelOpen] = useState(false);
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
   const [isAddReminderOpen, setIsAddReminderOpen] = useState(false);
+  const [isTimelineOpen, setIsTimelineOpen] = useState(false);
   const [vehicleDropdownOpen, setVehicleDropdownOpen] = useState(false);
 
   // Overall loading state check
@@ -401,116 +409,41 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   return (
     <div className="space-y-6">
       {/* ================================================== */}
-      {/* 1. DASHBOARD HEADER (Section 3) */}
+      {/* 1. DASHBOARD HEADER (Section 3) - 3D Automotive Hero */}
       {/* ================================================== */}
-      <div className="relative rounded-3xl overflow-hidden border border-cyan-500/20 bg-gradient-to-r from-[#0d131f] via-[#101726] to-[#0d131f] p-6 sm:p-8 shadow-2xl">
-        {/* Glow ambient effects */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-1/3 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-3">
-            <div>
-              <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight flex items-center gap-3">
-                <span>{selectedVehicle.name}</span>
-              </h1>
-              <div className="flex items-center gap-2.5 mt-2 flex-wrap text-sm">
-                <span className="text-cyan-300 font-bold font-mono bg-cyan-950/60 px-3 py-1 rounded-xl border border-cyan-500/40 tracking-wider">
-                  {selectedVehicle.vehicleNumber}
-                </span>
-                <span className="text-gray-300 font-medium">
-                  {selectedVehicle.brand} • {selectedVehicle.model}{selectedVehicle.variant ? ` • ${selectedVehicle.variant}` : ''}
-                </span>
-                <span className="text-gray-600">•</span>
-                <span className="px-2.5 py-0.5 rounded-lg bg-gray-800 text-gray-300 text-xs font-semibold">
-                  {selectedVehicle.fuelType}
-                </span>
-                <span className="text-gray-600">•</span>
-                <span className="text-emerald-400 font-mono font-bold flex items-center gap-1.5 bg-emerald-950/40 px-2.5 py-0.5 rounded-lg border border-emerald-500/20 text-xs">
-                  <Gauge className="w-3.5 h-3.5" />
-                  <span>{formatOdometer(selectedVehicle.currentOdometer)}</span>
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Quick Vehicle Switcher Dropdown & Manage Button */}
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Quick Switch Dropdown */}
-            {vehicles.length > 1 && (
-              <div className="relative">
-                <button
-                  onClick={() => setVehicleDropdownOpen(!vehicleDropdownOpen)}
-                  className="px-3.5 py-2.5 rounded-xl bg-gray-900/90 border border-gray-700/80 hover:border-cyan-500/50 text-white text-xs font-semibold transition-all cursor-pointer flex items-center gap-2"
-                >
-                  <Car className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>Switch Vehicle</span>
-                  <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform ${vehicleDropdownOpen ? 'rotate-180 text-cyan-400' : ''}`} />
-                </button>
-
-                {vehicleDropdownOpen && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setVehicleDropdownOpen(false)} />
-                    <div className="absolute right-0 top-full mt-2 w-56 bg-[#121620] border border-cyan-500/30 rounded-xl shadow-2xl py-2 z-50 animate-in fade-in slide-in-from-top-2">
-                      <div className="px-3 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                        My Vehicles ({vehicles.length})
-                      </div>
-                      {vehicles.map((v) => (
-                        <button
-                          key={v.id}
-                          onClick={() => {
-                            setSelectedVehicleId(v.id);
-                            setVehicleDropdownOpen(false);
-                          }}
-                          className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-gray-800/90 transition-colors ${
-                            selectedVehicle.id === v.id ? 'bg-cyan-500/10 text-cyan-400 font-bold' : 'text-gray-300'
-                          }`}
-                        >
-                          <span className="truncate pr-2">{v.name}</span>
-                          {selectedVehicle.id === v.id && (
-                            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shrink-0" />
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-
-            <button
-              onClick={() => onNavigateTab('vehicles')}
-              className="px-4 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-semibold border border-gray-700 transition-all cursor-pointer"
-            >
-              Manage Vehicle
-            </button>
-          </div>
-        </div>
-      </div>
+      <Automotive3DHero
+        selectedVehicle={selectedVehicle}
+        vehicles={vehicles}
+        onSelectVehicle={(id) => setSelectedVehicleId(id)}
+        onOpenAddVehicle={onOpenAddVehicle}
+        onOpenTimeline={() => setIsTimelineOpen(true)}
+        onPrintReport={() => printVehicleMaintenanceReport(selectedVehicle, services, documents, fuelRecords, expenses)}
+        onNavigateTab={onNavigateTab}
+      />
 
       {/* ================================================== */}
       {/* 2. QUICK ACTIONS (Section 4) */}
       {/* ================================================== */}
-      <div className="p-4 rounded-2xl bg-[#0f131c] border border-gray-800/80">
+      <div className="p-4 rounded-3xl bg-[#151A20] border border-[#252C35] shadow-lg">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Quick Actions</span>
+          <span className="text-xs font-mono font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-[#00D4C7]" />
+            <span>Telemetry Quick Commands</span>
           </span>
-          <span className="text-[11px] text-gray-500">Record new data instantly</span>
+          <span className="text-[11px] text-gray-400">Record new vehicle telemetry instantly</span>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
           {/* + Add Vehicle */}
           <button
             onClick={onOpenAddVehicle}
-            className="p-2.5 rounded-xl bg-gray-900/80 hover:bg-gray-800/90 border border-gray-800 hover:border-cyan-500/40 text-left transition-all group cursor-pointer"
+            className="p-3 rounded-2xl bg-[#1D232B] hover:bg-[#252C35] border border-[#252C35] hover:border-[#00D4C7]/50 text-left transition-all group cursor-pointer shadow-sm btn-3d"
           >
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-cyan-950/60 border border-cyan-500/30 flex items-center justify-center text-cyan-400 group-hover:scale-105 transition-transform">
-                <Car className="w-3.5 h-3.5" />
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-[#00D4C7]/10 border border-[#00D4C7]/30 flex items-center justify-center text-[#00D4C7] group-hover:scale-105 transition-transform">
+                <Car className="w-4 h-4" />
               </div>
-              <span className="text-xs font-bold text-white group-hover:text-cyan-400 transition-colors">
+              <span className="text-xs font-bold text-white group-hover:text-[#00D4C7] transition-colors">
                 + Vehicle
               </span>
             </div>
@@ -519,11 +452,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {/* + Add Document */}
           <button
             onClick={() => setIsAddDocOpen(true)}
-            className="p-2.5 rounded-xl bg-gray-900/80 hover:bg-gray-800/90 border border-gray-800 hover:border-blue-500/40 text-left transition-all group cursor-pointer"
+            className="p-3 rounded-2xl bg-[#1D232B] hover:bg-[#252C35] border border-[#252C35] hover:border-blue-500/50 text-left transition-all group cursor-pointer shadow-sm btn-3d"
           >
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-blue-950/60 border border-blue-500/30 flex items-center justify-center text-blue-400 group-hover:scale-105 transition-transform">
-                <FileText className="w-3.5 h-3.5" />
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400 group-hover:scale-105 transition-transform">
+                <FileText className="w-4 h-4" />
               </div>
               <span className="text-xs font-bold text-white group-hover:text-blue-400 transition-colors">
                 + Document
@@ -534,13 +467,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {/* + Add Service */}
           <button
             onClick={() => setIsAddServiceOpen(true)}
-            className="p-2.5 rounded-xl bg-gray-900/80 hover:bg-gray-800/90 border border-gray-800 hover:border-cyan-500/40 text-left transition-all group cursor-pointer"
+            className="p-3 rounded-2xl bg-[#1D232B] hover:bg-[#252C35] border border-[#252C35] hover:border-[#00D4C7]/50 text-left transition-all group cursor-pointer shadow-sm btn-3d"
           >
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-cyan-950/60 border border-cyan-500/30 flex items-center justify-center text-cyan-400 group-hover:scale-105 transition-transform">
-                <Wrench className="w-3.5 h-3.5" />
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-[#00D4C7]/10 border border-[#00D4C7]/30 flex items-center justify-center text-[#00D4C7] group-hover:scale-105 transition-transform">
+                <Wrench className="w-4 h-4" />
               </div>
-              <span className="text-xs font-bold text-white group-hover:text-cyan-400 transition-colors">
+              <span className="text-xs font-bold text-white group-hover:text-[#00D4C7] transition-colors">
                 + Service
               </span>
             </div>
@@ -549,11 +482,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {/* + Add Fuel */}
           <button
             onClick={() => setIsAddFuelOpen(true)}
-            className="p-2.5 rounded-xl bg-gray-900/80 hover:bg-gray-800/90 border border-gray-800 hover:border-amber-500/40 text-left transition-all group cursor-pointer"
+            className="p-3 rounded-2xl bg-[#1D232B] hover:bg-[#252C35] border border-[#252C35] hover:border-amber-500/50 text-left transition-all group cursor-pointer shadow-sm btn-3d"
           >
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-amber-950/60 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:scale-105 transition-transform">
-                <Fuel className="w-3.5 h-3.5" />
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:scale-105 transition-transform">
+                <Fuel className="w-4 h-4" />
               </div>
               <span className="text-xs font-bold text-white group-hover:text-amber-400 transition-colors">
                 + Fuel
@@ -564,11 +497,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {/* + Add Expense */}
           <button
             onClick={() => setIsAddExpenseOpen(true)}
-            className="p-2.5 rounded-xl bg-gray-900/80 hover:bg-gray-800/90 border border-gray-800 hover:border-emerald-500/40 text-left transition-all group cursor-pointer"
+            className="p-3 rounded-2xl bg-[#1D232B] hover:bg-[#252C35] border border-[#252C35] hover:border-emerald-500/50 text-left transition-all group cursor-pointer shadow-sm btn-3d"
           >
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-emerald-950/60 border border-emerald-500/30 flex items-center justify-center text-emerald-400 group-hover:scale-105 transition-transform">
-                <Receipt className="w-3.5 h-3.5" />
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 group-hover:scale-105 transition-transform">
+                <Receipt className="w-4 h-4" />
               </div>
               <span className="text-xs font-bold text-white group-hover:text-emerald-400 transition-colors">
                 + Expense
@@ -579,11 +512,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {/* + Add Reminder */}
           <button
             onClick={() => setIsAddReminderOpen(true)}
-            className="p-2.5 rounded-xl bg-gray-900/80 hover:bg-gray-800/90 border border-gray-800 hover:border-purple-500/40 text-left transition-all group cursor-pointer"
+            className="p-3 rounded-2xl bg-[#1D232B] hover:bg-[#252C35] border border-[#252C35] hover:border-purple-500/50 text-left transition-all group cursor-pointer shadow-sm btn-3d"
           >
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-purple-950/60 border border-purple-500/30 flex items-center justify-center text-purple-400 group-hover:scale-105 transition-transform">
-                <Bell className="w-3.5 h-3.5" />
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 group-hover:scale-105 transition-transform">
+                <Bell className="w-4 h-4" />
               </div>
               <span className="text-xs font-bold text-white group-hover:text-purple-400 transition-colors">
                 + Reminder
@@ -594,40 +527,42 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       </div>
 
       {/* ================================================== */}
-      {/* 3. KEY METRICS - 6 CARDS (Section 5) */}
+      {/* 3. KEY METRICS - 6 3D CARDS (Section 5) */}
       {/* ================================================== */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
         {/* 1. Total Service Cost */}
-        <div 
+        <Card3D 
           onClick={() => onNavigateTab('services')}
-          className="p-4 rounded-2xl bg-[#0f131c] border border-gray-800/80 hover:border-cyan-500/40 transition-all cursor-pointer group flex flex-col justify-between"
+          className="p-4 cursor-pointer group flex flex-col justify-between"
+          accentColor="#00D4C7"
         >
           <div className="flex items-center justify-between text-gray-400">
             <span className="text-[11px] font-bold uppercase tracking-wider">
               Total Service Cost
             </span>
-            <div className="p-1.5 rounded-lg bg-cyan-950/40 text-cyan-400 group-hover:scale-110 transition-transform">
+            <div className="p-1.5 rounded-lg bg-[#00D4C7]/10 text-[#00D4C7] group-hover:scale-110 transition-transform">
               <Wrench className="w-3.5 h-3.5" />
             </div>
           </div>
-          <div className="mt-3 text-xl font-black text-cyan-400 font-mono">
+          <div className="mt-3 text-xl font-black text-[#00D4C7] font-mono">
             {formatCurrency(totalServiceCost)}
           </div>
           <div className="mt-1 text-[10px] text-gray-400">
             Logged services
           </div>
-        </div>
+        </Card3D>
 
         {/* 2. Total Fuel Cost */}
-        <div 
+        <Card3D 
           onClick={() => onNavigateTab('fuel')}
-          className="p-4 rounded-2xl bg-[#0f131c] border border-gray-800/80 hover:border-amber-500/40 transition-all cursor-pointer group flex flex-col justify-between"
+          className="p-4 cursor-pointer group flex flex-col justify-between"
+          accentColor="#FFB020"
         >
           <div className="flex items-center justify-between text-gray-400">
             <span className="text-[11px] font-bold uppercase tracking-wider">
               Total Fuel Cost
             </span>
-            <div className="p-1.5 rounded-lg bg-amber-950/40 text-amber-400 group-hover:scale-110 transition-transform">
+            <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-400 group-hover:scale-110 transition-transform">
               <Fuel className="w-3.5 h-3.5" />
             </div>
           </div>
@@ -637,18 +572,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="mt-1 text-[10px] text-gray-400">
             Fuel expenditures
           </div>
-        </div>
+        </Card3D>
 
         {/* 3. Total Expenses */}
-        <div 
+        <Card3D 
           onClick={() => onNavigateTab('expenses')}
-          className="p-4 rounded-2xl bg-[#0f131c] border border-gray-800/80 hover:border-emerald-500/40 transition-all cursor-pointer group flex flex-col justify-between"
+          className="p-4 cursor-pointer group flex flex-col justify-between"
+          accentColor="#20C997"
         >
           <div className="flex items-center justify-between text-gray-400">
             <span className="text-[11px] font-bold uppercase tracking-wider">
               Total Expenses
             </span>
-            <div className="p-1.5 rounded-lg bg-emerald-950/40 text-emerald-400 group-hover:scale-110 transition-transform">
+            <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 group-hover:scale-110 transition-transform">
               <Receipt className="w-3.5 h-3.5" />
             </div>
           </div>
@@ -658,18 +594,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="mt-1 text-[10px] text-gray-400">
             General expenses
           </div>
-        </div>
+        </Card3D>
 
         {/* 4. Service Records */}
-        <div 
+        <Card3D 
           onClick={() => onNavigateTab('services')}
-          className="p-4 rounded-2xl bg-[#0f131c] border border-gray-800/80 hover:border-purple-500/40 transition-all cursor-pointer group flex flex-col justify-between"
+          className="p-4 cursor-pointer group flex flex-col justify-between"
+          accentColor="#A855F7"
         >
           <div className="flex items-center justify-between text-gray-400">
             <span className="text-[11px] font-bold uppercase tracking-wider">
               Service Records
             </span>
-            <div className="p-1.5 rounded-lg bg-purple-950/40 text-purple-400 group-hover:scale-110 transition-transform">
+            <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-400 group-hover:scale-110 transition-transform">
               <Layers className="w-3.5 h-3.5" />
             </div>
           </div>
@@ -679,18 +616,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="mt-1 text-[10px] text-gray-400">
             Maintenance logs
           </div>
-        </div>
+        </Card3D>
 
         {/* 5. Fuel Entries */}
-        <div 
+        <Card3D 
           onClick={() => onNavigateTab('fuel')}
-          className="p-4 rounded-2xl bg-[#0f131c] border border-gray-800/80 hover:border-blue-500/40 transition-all cursor-pointer group flex flex-col justify-between"
+          className="p-4 cursor-pointer group flex flex-col justify-between"
+          accentColor="#38BDF8"
         >
           <div className="flex items-center justify-between text-gray-400">
             <span className="text-[11px] font-bold uppercase tracking-wider">
               Fuel Entries
             </span>
-            <div className="p-1.5 rounded-lg bg-blue-950/40 text-blue-400 group-hover:scale-110 transition-transform">
+            <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-400 group-hover:scale-110 transition-transform">
               <Fuel className="w-3.5 h-3.5" />
             </div>
           </div>
@@ -700,19 +638,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="mt-1 text-[10px] text-gray-400">
             Recorded fill-ups
           </div>
-        </div>
+        </Card3D>
 
         {/* 6. Active Reminders */}
-        <div 
+        <Card3D 
           onClick={() => onNavigateTab('reminders')}
-          className="p-4 rounded-2xl bg-[#0f131c] border border-gray-800/80 hover:border-red-500/40 transition-all cursor-pointer group flex flex-col justify-between"
+          className="p-4 cursor-pointer group flex flex-col justify-between"
+          accentColor={activeRemindersCount > 0 ? '#FF4D4F' : '#00D4C7'}
         >
           <div className="flex items-center justify-between text-gray-400">
             <span className="text-[11px] font-bold uppercase tracking-wider">
               Active Reminders
             </span>
             <div className={`p-1.5 rounded-lg group-hover:scale-110 transition-transform ${
-              activeRemindersCount > 0 ? 'bg-red-950/40 text-red-400' : 'bg-gray-800 text-gray-400'
+              activeRemindersCount > 0 ? 'bg-red-500/15 text-red-400' : 'bg-gray-800 text-gray-400'
             }`}>
               <Bell className="w-3.5 h-3.5" />
             </div>
@@ -725,7 +664,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="mt-1 text-[10px] text-gray-400">
             Pending tasks &amp; expiries
           </div>
-        </div>
+        </Card3D>
       </div>
 
       {/* ================================================== */}
@@ -1118,8 +1057,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     </div>
 
                     <div className="p-3.5 rounded-2xl bg-[#0a0d14] border border-gray-800">
-                      <span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider block">
-                        Latest Odometer
+                      <span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider block" title="Odometer reading logged on latest fuel refill">
+                        Latest Recorded Fuel Odometer
                       </span>
                       <span className="text-lg font-black text-white font-mono mt-1 block">
                         {fuelMetrics.latestEntry ? formatOdometer(fuelMetrics.latestEntry.odometer) : 'N/A'}
@@ -1478,6 +1417,55 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           defaultVehicleId={selectedVehicle.id}
           title="Create Vehicle Reminder"
         />
+      )}
+
+      {/* Vehicle Timeline / Logbook Modal */}
+      {isTimelineOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="w-full max-w-3xl max-h-[90vh] bg-[#0e121a] border border-cyan-500/30 rounded-3xl shadow-2xl flex flex-col overflow-hidden text-gray-100">
+            <div className="p-5 border-b border-gray-800 flex items-center justify-between bg-[#111622]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-cyan-950/60 border border-cyan-500/40 flex items-center justify-center text-cyan-400">
+                  <History className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-white tracking-tight">
+                    Vehicle Lifetime Timeline &amp; Logbook
+                  </h2>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {selectedVehicle.name} ({selectedVehicle.vehicleNumber}) • Chronological History Stream
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsTimelineOpen(false)}
+                className="p-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white transition-colors cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-5 sm:p-6 custom-scrollbar">
+              <VehicleTimelineView />
+            </div>
+
+            <div className="p-4 border-t border-gray-800 bg-[#111622] flex items-center justify-between">
+              <button
+                onClick={() => exportVehicleDataJSON(selectedVehicle, services, fuelRecords, expenses, documents)}
+                className="text-xs text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-1.5 cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Backup JSON Archive</span>
+              </button>
+              <button
+                onClick={() => setIsTimelineOpen(false)}
+                className="px-6 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-white font-bold text-xs transition-colors cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

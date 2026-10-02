@@ -1,5 +1,111 @@
 @import "tailwindcss";
 
+/* ---------------------------------------------------- */
+/* METALLIC NIGHT Automotive Color & Depth System       */
+/* ---------------------------------------------------- */
+:root {
+  --bg-page: #0B0E14;
+  --bg-sidebar: #10141B;
+  --surface-primary: #151A20;
+  --surface-secondary: #1D232B;
+  --surface-elevated: #252C35;
+  --accent-teal: #00D4C7;
+  --accent-titanium: #B8C2CC;
+  --text-highlight: #F5F7FA;
+  --text-muted: #8E9BA8;
+  --status-amber: #FFB020;
+  --status-red: #FF4D4F;
+  --status-emerald: #20C997;
+  --border-metallic: rgba(184, 194, 204, 0.12);
+  --border-glow: rgba(0, 212, 199, 0.3);
+}
+
+html.light {
+  --bg-page: #F4F6F9;
+  --bg-sidebar: #FFFFFF;
+  --surface-primary: #FFFFFF;
+  --surface-secondary: #EBF0F5;
+  --surface-elevated: #DFE5EC;
+  --accent-teal: #00AFA4;
+  --accent-titanium: #64748B;
+  --text-highlight: #121820;
+  --text-muted: #4B5563;
+  --status-amber: #D97706;
+  --status-red: #DC2626;
+  --status-emerald: #059669;
+  --border-metallic: rgba(15, 23, 42, 0.1);
+  --border-glow: rgba(0, 175, 164, 0.3);
+}
+
+body {
+  background-color: var(--bg-page);
+  color: var(--text-highlight);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  overflow-x: hidden;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* Light Theme Element Overrides */
+html.light body {
+  background-color: #F4F6F9;
+  color: #121820;
+}
+
+html.light main {
+  background-color: #F4F6F9;
+}
+
+html.light .bg-\[\#07090e\],
+html.light .bg-\[\#090b10\],
+html.light .bg-\[\#0a0d14\],
+html.light .bg-\[\#0b0e14\],
+html.light .bg-\[\#0b0e17\],
+html.light .bg-\[\#0c1018\],
+html.light .bg-\[\#0d1017\],
+html.light .bg-\[\#0f131c\],
+html.light .bg-\[\#0f1420\],
+html.light .bg-\[\#0f1422\],
+html.light .bg-\[\#121622\],
+html.light .bg-\[\#121624\],
+html.light .bg-\[\#141926\],
+html.light .bg-\[\#151A20\],
+html.light .bg-\[\#1D232B\] {
+  background-color: #FFFFFF !important;
+  color: #121820 !important;
+}
+
+html.light .bg-gray-900,
+html.light .bg-gray-900\/60,
+html.light .bg-gray-900\/80,
+html.light .bg-gray-900\/90,
+html.light .bg-gray-950 {
+  background-color: #EBF0F5 !important;
+}
+
+html.light .text-white {
+  color: #121820 !important;
+}
+
+html.light .text-gray-100,
+html.light .text-gray-200,
+html.light .text-gray-300 {
+  color: #1E293B !important;
+}
+
+html.light .text-gray-400,
+html.light .text-gray-500 {
+  color: #475569 !important;
+}
+
+html.light .border-gray-800,
+html.light .border-gray-800\/60,
+html.light .border-gray-800\/80,
+html.light .border-gray-800\/90,
+html.light .border-gray-700,
+html.light .border-gray-700\/80 {
+  border-color: #CBD5E1 !important;
+}
+
 /* Custom Scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
@@ -7,22 +113,160 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: #0d1117;
+  background: #0E121A;
+}
+
+html.light .custom-scrollbar::-webkit-scrollbar-track {
+  background: #E2E8F0;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #21262d;
+  background: #252C35;
   border-radius: 9999px;
 }
 
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #30363d;
+html.light .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #94A3B8;
 }
 
-/* Background grid effect */
-body {
-  background-color: #07090e;
-  color: #f3f4f6;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  overflow-x: hidden;
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #36414E;
+}
+
+/* ---------------------------------------------------- */
+/* 3D Animations & Keyframes                            */
+/* ---------------------------------------------------- */
+@keyframes float3d {
+  0%, 100% {
+    transform: translateY(0px) rotateX(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotateX(1.5deg);
+  }
+}
+
+@keyframes pulseTealGlow {
+  0%, 100% {
+    box-shadow: 0 0 25px rgba(0, 212, 199, 0.25), 0 0 50px rgba(0, 212, 199, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 45px rgba(0, 212, 199, 0.5), 0 0 80px rgba(0, 212, 199, 0.2);
+  }
+}
+
+@keyframes modal3d {
+  0% {
+    opacity: 0;
+    transform: perspective(1000px) rotateX(4deg) scale(0.96) translateY(16px);
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(1000px) rotateX(0deg) scale(1) translateY(0);
+  }
+}
+
+@keyframes pageEnter3d {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) scale(0.985);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes telemetryScan {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+.animate-modal-3d {
+  animation: modal3d 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-page-enter {
+  animation: pageEnter3d 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.floating-3d {
+  animation: float3d 5s ease-in-out infinite;
+}
+
+.glow-orb-3d {
+  animation: pulseTealGlow 4s ease-in-out infinite;
+}
+
+/* ---------------------------------------------------- */
+/* 3D Utility Classes & Metallic Depth                  */
+/* ---------------------------------------------------- */
+.card-3d {
+  perspective: 1000px;
+  transform-style: preserve-3d;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.card-3d:hover {
+  transform: translateY(-5px) perspective(1000px) rotateX(1.5deg);
+  box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.7), 0 0 25px -5px rgba(0, 212, 199, 0.25);
+}
+
+html.light .card-3d:hover {
+  box-shadow: 0 16px 25px -8px rgba(15, 23, 42, 0.1), 0 0 20px -3px rgba(0, 175, 164, 0.2);
+}
+
+.metallic-surface {
+  background: linear-gradient(135deg, rgba(29, 35, 43, 0.95) 0%, rgba(21, 26, 32, 0.98) 100%);
+  border: 1px solid rgba(184, 194, 204, 0.12);
+  backdrop-filter: blur(12px);
+}
+
+.metallic-surface-elevated {
+  background: linear-gradient(135deg, rgba(37, 44, 53, 0.95) 0%, rgba(29, 35, 43, 0.98) 100%);
+  border: 1px solid rgba(0, 212, 199, 0.25);
+  box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.btn-3d {
+  transform-style: preserve-3d;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.btn-3d:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px -4px rgba(0, 212, 199, 0.4);
+}
+
+.btn-3d:active {
+  transform: translateY(1px);
+}
+
+/* Automotive Telemetry Lines */
+.telemetry-grid {
+  background-image: 
+    linear-gradient(to right, rgba(0, 212, 199, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 212, 199, 0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* ---------------------------------------------------- */
+/* Accessibility: Reduced Motion                        */
+/* ---------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+    transform: none !important;
+  }
 }

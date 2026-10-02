@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
-import { Plus, Edit2, Trash2, Check, Gauge, Calendar, Fuel, AlertCircle } from 'lucide-react';
+import { Plus, Edit2, Trash2, Check, Gauge, Calendar, Fuel, AlertCircle, Layers, Award, Car, Sparkles } from 'lucide-react';
 import { Vehicle } from '../../types';
 import { useVehicle } from '../../context/VehicleContext';
 import { VehicleModal } from './VehicleModal';
+import { FleetOverviewModal } from './FleetOverviewModal';
+import { VehicleValuationModal } from './VehicleValuationModal';
 import { ConfirmDialog } from '../common/Modal';
+import { SectionVisualHeader } from '../common/SectionVisualHeader';
 import { formatOdometer, formatDate } from '../../utils/formatters';
 
 interface VehiclesViewProps {
@@ -17,10 +20,14 @@ export const VehiclesView: React.FC<VehiclesViewProps> = ({ onOpenAddModal }) =>
     setSelectedVehicleId, 
     deleteVehicle, 
     updateVehicle, 
-    loadingVehicles 
+    loadingVehicles,
+    services,
+    documents
   } = useVehicle();
 
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
+  const [valuationVehicle, setValuationVehicle] = useState<Vehicle | null>(null);
+  const [isFleetModalOpen, setIsFleetModalOpen] = useState(false);
   const [deletingVehicleId, setDeletingVehicleId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -53,29 +60,39 @@ export const VehiclesView: React.FC<VehiclesViewProps> = ({ onOpenAddModal }) =>
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight text-white flex items-center gap-2">
-            <span>My Vehicles</span>
-            <span className="text-sm font-normal text-gray-400">({vehicles.length})</span>
-          </h1>
-          <p className="text-sm text-gray-400 mt-1">
-            Manage your garage, switch active vehicles, and view technical details.
-          </p>
-        </div>
-        <button
-          onClick={onOpenAddModal}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-semibold text-sm shadow-lg shadow-cyan-500/20 transition-all cursor-pointer self-start sm:self-auto"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add Vehicle</span>
-        </button>
-      </div>
+      {/* 3D Section Visual Header */}
+      <SectionVisualHeader
+        sectionId="vehicles"
+        customTitle="My Vehicles"
+        customTagline="Manage your garage fleet, switch active vehicles, and inspect technical specifications."
+        activeVehicleInfo={selectedVehicle ? `${selectedVehicle.name} (${selectedVehicle.vehicleNumber})` : undefined}
+        rightAction={
+          <div className="flex items-center gap-2.5 flex-wrap">
+            {vehicles.length > 1 && (
+              <button
+                onClick={() => setIsFleetModalOpen(true)}
+                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-[#1D232B] hover:bg-[#252C35] border border-[#00D4C7]/40 text-[#00D4C7] hover:text-white font-semibold text-xs shadow-md transition-all cursor-pointer btn-3d"
+                title="Compare all vehicles in garage"
+              >
+                <Layers className="w-3.5 h-3.5 text-[#00D4C7]" />
+                <span>Fleet Comparison</span>
+              </button>
+            )}
+
+            <button
+              onClick={onOpenAddModal}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#00D4C7] to-blue-600 hover:from-[#00D4C7] hover:to-blue-500 text-black hover:text-white font-bold text-sm shadow-lg shadow-[#00D4C7]/20 transition-all cursor-pointer btn-3d"
+            >
+              <Plus className="w-4 h-4 text-black group-hover:text-white" />
+              <span>Add Vehicle</span>
+            </button>
+          </div>
+        }
+      />
 
       {vehicles.length === 0 ? (
-        <div className="rounded-2xl border border-gray-800 bg-[#0d1017] p-12 text-center max-w-lg mx-auto">
-          <div className="w-16 h-16 rounded-2xl bg-cyan-950/40 border border-cyan-500/30 flex items-center justify-center mx-auto text-3xl mb-4">
+        <div className="rounded-3xl border border-[#252C35] bg-[#151A20] p-12 text-center max-w-lg mx-auto card-3d">
+          <div className="w-16 h-16 rounded-2xl bg-[#00D4C7]/10 border border-[#00D4C7]/30 flex items-center justify-center mx-auto text-3xl mb-4">
             🚗
           </div>
           <h3 className="text-lg font-bold text-white mb-2">No vehicles yet</h3>
@@ -84,7 +101,7 @@ export const VehiclesView: React.FC<VehiclesViewProps> = ({ onOpenAddModal }) =>
           </p>
           <button
             onClick={onOpenAddModal}
-            className="px-6 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-semibold text-sm transition-all"
+            className="px-6 py-2.5 rounded-xl bg-[#00D4C7] hover:bg-[#00D4C7]/80 text-black font-bold text-sm transition-all shadow-lg shadow-[#00D4C7]/25"
           >
             Add Your First Vehicle
           </button>
@@ -96,36 +113,39 @@ export const VehiclesView: React.FC<VehiclesViewProps> = ({ onOpenAddModal }) =>
             return (
               <div
                 key={v.id}
-                className={`relative rounded-2xl border transition-all duration-200 overflow-hidden flex flex-col justify-between ${
+                className={`relative rounded-3xl border transition-all duration-300 overflow-hidden flex flex-col justify-between card-3d ${
                   isSelected
-                    ? 'bg-gradient-to-b from-[#131b2c] to-[#0d121c] border-cyan-500/60 shadow-xl shadow-cyan-950/50'
-                    : 'bg-[#0f131c] border-gray-800/80 hover:border-gray-700 hover:bg-[#121622]'
+                    ? 'bg-gradient-to-b from-[#18232e] via-[#151a20] to-[#0f131a] border-[#00D4C7]/70 shadow-2xl shadow-[#00D4C7]/15 ring-1 ring-[#00D4C7]/30'
+                    : 'bg-[#151A20] border-[#252C35] hover:border-[#384554] hover:bg-[#1A2028]'
                 }`}
               >
-                {/* Active Indicator Header */}
-                {isSelected && (
-                  <div className="bg-cyan-500/20 border-b border-cyan-500/30 px-4 py-1.5 flex items-center justify-between text-xs text-cyan-300 font-medium">
+                {/* Active Indicator & Metallic Top Bar */}
+                {isSelected ? (
+                  <div className="bg-[#00D4C7]/15 border-b border-[#00D4C7]/30 px-4 py-2 flex items-center justify-between text-xs text-[#00D4C7] font-semibold">
                     <span className="flex items-center gap-1.5">
-                      <Check className="w-3.5 h-3.5 text-cyan-400" /> Active Dashboard Vehicle
+                      <Check className="w-3.5 h-3.5 text-[#00D4C7]" /> Active Telemetry Vehicle
                     </span>
-                    <span className="text-[10px] uppercase font-bold tracking-wider bg-cyan-500/30 px-2 py-0.5 rounded text-white">
-                      Selected
+                    <span className="text-[10px] uppercase font-mono font-bold tracking-wider bg-[#00D4C7] text-black px-2 py-0.5 rounded">
+                      Active
                     </span>
                   </div>
+                ) : (
+                  <div className="h-1 bg-gradient-to-r from-transparent via-[#252C35] to-transparent" />
                 )}
 
                 <div className="p-5 flex-1">
+                  {/* Vehicle Header & Number Plate */}
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs px-2 py-0.5 rounded bg-gray-800 text-gray-300 font-mono">
+                        <span className="text-xs px-2 py-0.5 rounded bg-[#1D232B] border border-[#252C35] text-gray-300 font-mono font-semibold">
                           {v.brand}
                         </span>
-                        <span className="text-xs px-2 py-0.5 rounded bg-gray-800/60 text-gray-400">
+                        <span className="text-xs px-2 py-0.5 rounded bg-[#1D232B] text-gray-400 font-medium">
                           {v.fuelType}
                         </span>
                       </div>
-                      <h3 className="text-lg font-bold text-white mt-1.5 leading-snug">
+                      <h3 className="text-lg font-black text-white mt-2 leading-snug">
                         {v.name}
                       </h3>
                       <p className="text-xs text-gray-400">
@@ -134,28 +154,45 @@ export const VehiclesView: React.FC<VehiclesViewProps> = ({ onOpenAddModal }) =>
                     </div>
 
                     <div className="text-right">
-                      <span className="inline-block px-2.5 py-1 rounded-lg bg-gray-900 border border-gray-700 text-xs font-mono font-bold text-cyan-300 tracking-wider">
+                      <span className="inline-block px-2.5 py-1 rounded-lg bg-[#0e1217] border border-[#252C35] text-xs font-mono font-bold text-[#00D4C7] tracking-wider shadow-inner">
                         {v.vehicleNumber}
                       </span>
                     </div>
                   </div>
 
-                  {/* Metrics grid */}
-                  <div className="mt-5 grid grid-cols-2 gap-3 pt-4 border-t border-gray-800/60">
-                    <div className="p-2.5 rounded-xl bg-gray-900/60 border border-gray-800/40">
-                      <div className="flex items-center gap-1.5 text-[11px] text-gray-400 uppercase font-semibold">
-                        <Gauge className="w-3 h-3 text-cyan-400" /> Odometer
+                  {/* Stylized Vehicle Silhouette Display */}
+                  <div className="mt-4 p-3 rounded-2xl bg-[#0e1217]/70 border border-[#252C35]/60 flex items-center justify-between overflow-hidden relative group/car">
+                    <div className="flex items-center gap-2 text-xs text-gray-400">
+                      <div className="w-7 h-7 rounded-lg bg-[#00D4C7]/10 flex items-center justify-center text-[#00D4C7]">
+                        <Car className="w-4 h-4" />
                       </div>
-                      <div className="text-sm font-bold text-white mt-1">
+                      <span className="font-mono text-[11px] uppercase tracking-wider text-gray-300">
+                        {v.model}
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-mono text-gray-500 uppercase">
+                      Chassis Ready
+                    </span>
+                    {/* Ambient vehicle glow */}
+                    <div className="absolute right-0 top-0 w-24 h-full bg-gradient-to-l from-[#00D4C7]/5 to-transparent pointer-events-none" />
+                  </div>
+
+                  {/* Metrics grid */}
+                  <div className="mt-4 grid grid-cols-2 gap-3 pt-4 border-t border-[#252C35]">
+                    <div className="p-2.5 rounded-xl bg-[#1D232B]/80 border border-[#252C35]/60">
+                      <div className="flex items-center gap-1.5 text-[11px] text-gray-400 uppercase font-semibold">
+                        <Gauge className="w-3 h-3 text-[#00D4C7]" /> Odometer
+                      </div>
+                      <div className="text-sm font-black text-white font-mono mt-1">
                         {formatOdometer(v.currentOdometer)}
                       </div>
                     </div>
 
-                    <div className="p-2.5 rounded-xl bg-gray-900/60 border border-gray-800/40">
+                    <div className="p-2.5 rounded-xl bg-[#1D232B]/80 border border-[#252C35]/60">
                       <div className="flex items-center gap-1.5 text-[11px] text-gray-400 uppercase font-semibold">
-                        <Calendar className="w-3 h-3 text-blue-400" /> Purchase
+                        <Calendar className="w-3 h-3 text-cyan-400" /> Purchase
                       </div>
-                      <div className="text-sm font-bold text-gray-200 mt-1">
+                      <div className="text-sm font-semibold text-gray-200 mt-1">
                         {formatDate(v.purchaseDate)}
                       </div>
                     </div>
@@ -163,29 +200,39 @@ export const VehiclesView: React.FC<VehiclesViewProps> = ({ onOpenAddModal }) =>
                 </div>
 
                 {/* Card Actions */}
-                <div className="p-4 bg-gray-950/40 border-t border-gray-800/60 flex items-center justify-between gap-2">
+                <div className="p-4 bg-[#11151B] border-t border-[#252C35] flex items-center justify-between gap-2">
                   {!isSelected ? (
                     <button
                       onClick={() => setSelectedVehicleId(v.id)}
-                      className="text-xs px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-cyan-500/20 hover:text-cyan-300 text-gray-300 font-semibold transition-all cursor-pointer"
+                      className="text-xs px-3.5 py-1.5 rounded-xl bg-[#1D232B] hover:bg-[#00D4C7]/20 hover:text-[#00D4C7] text-gray-300 font-semibold transition-all cursor-pointer border border-[#252C35] hover:border-[#00D4C7]/40"
                     >
                       Set as Active
                     </button>
                   ) : (
-                    <span className="text-[11px] text-cyan-400 font-medium">Currently viewing</span>
+                    <span className="text-[11px] text-[#00D4C7] font-semibold flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#00D4C7] animate-pulse" />
+                      <span>Active Telemetry</span>
+                    </span>
                   )}
 
                   <div className="flex items-center gap-1">
                     <button
+                      onClick={() => setValuationVehicle(v)}
+                      className="p-2 text-gray-400 hover:text-amber-400 hover:bg-[#1D232B] rounded-xl transition-colors cursor-pointer"
+                      title="Resale Valuation & Depreciation"
+                    >
+                      <Award className="w-4 h-4" />
+                    </button>
+                    <button
                       onClick={() => setEditingVehicle(v)}
-                      className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+                      className="p-2 text-gray-400 hover:text-white hover:bg-[#1D232B] rounded-xl transition-colors cursor-pointer"
                       title="Edit Vehicle"
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => setDeletingVehicleId(v.id)}
-                      className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                      className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors cursor-pointer"
                       title="Delete Vehicle"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -206,6 +253,28 @@ export const VehiclesView: React.FC<VehiclesViewProps> = ({ onOpenAddModal }) =>
           onSubmit={handleUpdate}
           initialData={editingVehicle}
           title="Edit Vehicle Details"
+        />
+      )}
+
+      {/* Garage Fleet Overview Modal */}
+      {isFleetModalOpen && (
+        <FleetOverviewModal
+          isOpen={isFleetModalOpen}
+          onClose={() => setIsFleetModalOpen(false)}
+          vehicles={vehicles}
+          onSelectVehicle={(id) => setSelectedVehicleId(id)}
+          activeVehicleId={selectedVehicle?.id || ''}
+        />
+      )}
+
+      {/* Vehicle Valuation Estimator Modal */}
+      {valuationVehicle && (
+        <VehicleValuationModal
+          isOpen={!!valuationVehicle}
+          onClose={() => setValuationVehicle(null)}
+          vehicle={valuationVehicle}
+          services={services}
+          documents={documents}
         />
       )}
 

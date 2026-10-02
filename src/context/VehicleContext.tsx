@@ -26,7 +26,8 @@ import {
   VehicleReminder,
   ReminderType,
   ReminderPriority,
-  ReminderStatus
+  ReminderStatus,
+  CustomMaintenanceRule
 } from '../types';
 import { getDocumentStatus, parseLocalDate, getReminderStatus } from '../utils/formatters';
 
@@ -94,6 +95,13 @@ interface VehicleContextType {
   addExpense: (expenseData: Omit<ExpenseRecord, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => Promise<string>;
   updateExpense: (id: string, expenseData: Partial<ExpenseRecord>) => Promise<void>;
   deleteExpense: (id: string) => Promise<void>;
+
+  // Custom Maintenance Rules operations
+  customRules: CustomMaintenanceRule[];
+  loadingCustomRules: boolean;
+  addCustomRule: (ruleData: Omit<CustomMaintenanceRule, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => Promise<string>;
+  updateCustomRule: (id: string, ruleData: Partial<CustomMaintenanceRule>) => Promise<void>;
+  deleteCustomRule: (id: string) => Promise<void>;
 }
 
 const VehicleContext = createContext<VehicleContextType | undefined>(undefined);
@@ -119,6 +127,9 @@ export const VehicleProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const [customReminders, setCustomReminders] = useState<VehicleReminder[]>([]);
   const [loadingReminders, setLoadingReminders] = useState<boolean>(false);
+
+  const [customRules, setCustomRules] = useState<CustomMaintenanceRule[]>([]);
+  const [loadingCustomRules, setLoadingCustomRules] = useState<boolean>(false);
 
   const [readReminderIds, setReadReminderIds] = useState<Set<string>>(new Set());
 
@@ -381,6 +392,61 @@ export const VehicleProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }, (err) => {
       console.error('Error fetching reminders:', err);
       setLoadingReminders(false);
+    });
+
+    return () => unsubscribe();
+  }, [currentUser, selectedVehicleId]);
+
+  // 7. Subscribe to Selected Vehicle Custom Maintenance Rules
+  useEffect(() => {
+    if (!currentUser || !selectedVehicleId) {
+      setCustomRules([]);
+      setLoadingCustomRules(false);
+      return;
+    }
+
+    setLoadingCustomRules(true);
+    const q = query(
+      collection(db, 'customMaintenanceRules'),
+      where('userId', '==', currentUser.uid),
+      where('vehicleId', '==', selectedVehicleId)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const list: CustomMaintenanceRule[] = [];
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        list.push({
+          id: docSnap.id,
+          userId: data.userId,
+          vehicleId: data.vehicleId,
+          name: data.name || '',
+          category: data.category || 'General',
+          intervalKm: Number(data.intervalKm) || 10000,
+          intervalMonths: data.intervalMonths !== undefined ? Number(data.intervalMonths) : undefined,
+          startingOdometer: data.startingOdometer !== undefined ? Number(data.startingOdometer) : undefined,
+          lastServiceOdometer: data.lastServiceOdometer !== undefined ? Number(data.lastServiceOdometer) : undefined,
+          lastServiceDate: data.lastServiceDate || undefined,
+          enabled: data.enabled !== undefined ? Boolean(data.enabled) : true,
+          ruleType: data.ruleType || 'whichever_first',
+          source: data.source || 'Custom',
+          description: data.description || undefined,
+          createdAt: data.createdAt || '',
+          updatedAt: data.updatedAt || '',
+        });
+      });
+      list.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+      setCustomRules(list);
+      setLoadingCustomRules(false);
+    }, (err) => {
+      console.warn('Error fetching customMaintenanceRules from Firestore:', err);
+      try {
+        const stored = localStorage.getItem(`autocare_custom_rules_${selectedVehicleId}`);
+        if (stored) {
+          setCustomRules(JSON.parse(stored));
+        }
+      } catch {}
+      setLoadingCustomRules(false);
     });
 
     return () => unsubscribe();
@@ -737,8 +803,8 @@ export const VehicleProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     const docRef = await addDoc(collection(db, 'serviceRecords'), cleanData);
 
-    // If odometer in service is higher than vehicle's current odometer, update vehicle
-    if (selectedVehicle && odoNum > selectedVehicle.currentOdometer) {
+    // If odometer in service is higher than vehicle's current odometer, update vehicle (Bug #4)
+    if (selectedVehicle && !isNaN(odoNum) && (selectedVehicle.currentOdometer === undefined || odoNum > selectedVehicle.currentOdometer)) {
       await updateVehicle(selectedVehicle.id, { currentOdometer: odoNum });
     }
 
@@ -779,7 +845,7 @@ export const VehicleProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     await updateDoc(ref, cleanData);
 
-    if (selectedVehicle && cleanData.odometer && cleanData.odometer > selectedVehicle.currentOdometer) {
+    if (selectedVehicle && cleanData.odometer !== undefined && !isNaN(cleanData.odometer) && (selectedVehicle.currentOdometer === undefined || cleanData.odometer > selectedVehicle.currentOdometer)) {
       await updateVehicle(selectedVehicle.id, { currentOdometer: cleanData.odometer });
     }
   };
@@ -811,9 +877,13 @@ export const VehicleProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const litresNum = fuelData.litres !== null && fuelData.litres !== undefined && !isNaN(Number(fuelData.litres))
       ? Number(fuelData.litres)
       : null;
-    const priceNum = fuelData.pricePerLitre !== null && fuelData.pricePerLitre !== undefined && !isNaN(Number(fuelData.pricePerLitre))
-      ? Number(fuelData.pricePerLitre)
-      : null;
+
+    // Recalculate pricePerLitre dynamically from totalCost / quantity (Bug #1)
+    let priceNum = (litresNum && litresNum > 0 && !isNaN(costNum))
+      ? Math.round((costNum / litresNum) * 100) / 100
+      : (fuelData.pricePerLitre !== null && fuelData.pricePerLitre !== undefined && !isNaN(Number(fuelData.pricePerLitre))
+          ? Number(fuelData.pricePerLitre)
+          : null);
 
     const now = new Date().toISOString();
     const cleanData = sanitizeFirestoreData({
@@ -833,8 +903,8 @@ export const VehicleProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     const docRef = await addDoc(collection(db, 'fuelRecords'), cleanData);
 
-    // If odometer in fuel record is higher than vehicle's current odometer, update vehicle
-    if (selectedVehicle && odoNum > selectedVehicle.currentOdometer) {
+    // If odometer in fuel record is higher than vehicle's current odometer, update vehicle (Bug #4)
+    if (selectedVehicle && !isNaN(odoNum) && (selectedVehicle.currentOdometer === undefined || odoNum > selectedVehicle.currentOdometer)) {
       await updateVehicle(selectedVehicle.id, { currentOdometer: odoNum });
     }
 
@@ -849,21 +919,30 @@ export const VehicleProvider: React.FC<{ children: React.ReactNode }> = ({ child
       throw new Error('Unauthorized: fuel record does not belong to your account');
     }
 
+    const existingData = snap.data() as FuelRecord;
     const odoNum = fuelData.odometer !== undefined ? Number(fuelData.odometer) : undefined;
     const costNum = fuelData.totalCost !== undefined ? Number(fuelData.totalCost) : undefined;
     const litresNum = fuelData.litres !== undefined 
       ? (fuelData.litres !== null && !isNaN(Number(fuelData.litres)) ? Number(fuelData.litres) : null)
       : undefined;
-    const priceNum = fuelData.pricePerLitre !== undefined
+
+    // Recalculate pricePerLitre dynamically from effective cost / litres (Bug #1)
+    const effectiveCost = costNum !== undefined ? costNum : existingData.totalCost;
+    const effectiveLitres = litresNum !== undefined ? litresNum : existingData.litres;
+    let finalPrice = fuelData.pricePerLitre !== undefined
       ? (fuelData.pricePerLitre !== null && !isNaN(Number(fuelData.pricePerLitre)) ? Number(fuelData.pricePerLitre) : null)
-      : undefined;
+      : existingData.pricePerLitre;
+
+    if (effectiveLitres && effectiveLitres > 0 && effectiveCost !== undefined && !isNaN(effectiveCost)) {
+      finalPrice = Math.round((effectiveCost / effectiveLitres) * 100) / 100;
+    }
 
     const cleanData = sanitizeFirestoreData({
       fuelDate: fuelData.fuelDate,
       odometer: odoNum,
       fuelType: fuelData.fuelType,
       litres: litresNum,
-      pricePerLitre: priceNum,
+      pricePerLitre: finalPrice,
       totalCost: costNum,
       station: fuelData.station !== undefined ? (fuelData.station?.trim() || null) : undefined,
       notes: fuelData.notes !== undefined ? (fuelData.notes?.trim() || null) : undefined,
@@ -878,7 +957,7 @@ export const VehicleProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     await updateDoc(ref, cleanData);
 
-    if (selectedVehicle && odoNum !== undefined && odoNum > selectedVehicle.currentOdometer) {
+    if (selectedVehicle && odoNum !== undefined && !isNaN(odoNum) && (selectedVehicle.currentOdometer === undefined || odoNum > selectedVehicle.currentOdometer)) {
       await updateVehicle(selectedVehicle.id, { currentOdometer: odoNum });
     }
   };
@@ -1080,6 +1159,60 @@ export const VehicleProvider: React.FC<{ children: React.ReactNode }> = ({ child
     await deleteDoc(ref);
   };
 
+  // Custom Maintenance Rules operations (Bug #5)
+  const addCustomRule = async (ruleData: Omit<CustomMaintenanceRule, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => {
+    if (!currentUser || !selectedVehicleId) throw new Error('No vehicle or user active');
+    const now = new Date().toISOString();
+    const cleanData: any = {
+      ...ruleData,
+      userId: currentUser.uid,
+      vehicleId: selectedVehicleId,
+      createdAt: now,
+      updatedAt: now,
+      enabled: ruleData.enabled !== undefined ? ruleData.enabled : true,
+    };
+    try {
+      const docRef = await addDoc(collection(db, 'customMaintenanceRules'), cleanData);
+      return docRef.id;
+    } catch (err) {
+      console.warn('Firestore addDoc customMaintenanceRules failed, using local state:', err);
+      const fakeId = `rule_${Date.now()}`;
+      const newRule: CustomMaintenanceRule = { ...cleanData, id: fakeId };
+      setCustomRules(prev => [newRule, ...prev]);
+      try {
+        localStorage.setItem(`autocare_custom_rules_${selectedVehicleId}`, JSON.stringify([newRule, ...customRules]));
+      } catch {}
+      return fakeId;
+    }
+  };
+
+  const updateCustomRule = async (id: string, ruleData: Partial<CustomMaintenanceRule>) => {
+    if (!currentUser) throw new Error('Not authenticated');
+    const now = new Date().toISOString();
+    const cleanData: any = {
+      ...ruleData,
+      updatedAt: now,
+    };
+    delete cleanData.id;
+    delete cleanData.userId;
+    try {
+      await updateDoc(doc(db, 'customMaintenanceRules', id), cleanData);
+    } catch (err) {
+      console.warn('Firestore updateDoc customMaintenanceRules failed:', err);
+      setCustomRules(prev => prev.map(r => r.id === id ? { ...r, ...cleanData } : r));
+    }
+  };
+
+  const deleteCustomRule = async (id: string) => {
+    if (!currentUser) throw new Error('Not authenticated');
+    try {
+      await deleteDoc(doc(db, 'customMaintenanceRules', id));
+    } catch (err) {
+      console.warn('Firestore deleteDoc customMaintenanceRules failed:', err);
+      setCustomRules(prev => prev.filter(r => r.id !== id));
+    }
+  };
+
   return (
     <VehicleContext.Provider value={{
       vehicles,
@@ -1121,6 +1254,11 @@ export const VehicleProvider: React.FC<{ children: React.ReactNode }> = ({ child
       addExpense,
       updateExpense,
       deleteExpense,
+      customRules,
+      loadingCustomRules,
+      addCustomRule,
+      updateCustomRule,
+      deleteCustomRule,
     }}>
       {children}
     </VehicleContext.Provider>

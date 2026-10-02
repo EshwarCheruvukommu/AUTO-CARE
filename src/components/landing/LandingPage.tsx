@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Logo } from '../common/Logo';
+import { FAQModal } from '../common/FAQModal';
 import { 
   ShieldCheck, 
   Wrench, 
@@ -10,7 +11,8 @@ import {
   CheckCircle2, 
   FileCheck,
   ChevronRight,
-  Car
+  Car,
+  HelpCircle
 } from 'lucide-react';
 
 interface LandingPageProps {
@@ -18,6 +20,8 @@ interface LandingPageProps {
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
+  const [faqOpen, setFaqOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-[#07090e] text-gray-100 flex flex-col antialiased selection:bg-cyan-500 selection:text-black">
       {/* Top Navbar */}
@@ -26,6 +30,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
           <Logo size="md" />
 
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setFaqOpen(true)}
+              className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-gray-400 hover:text-cyan-300 hover:bg-gray-800/60 transition-colors cursor-pointer"
+            >
+              <HelpCircle className="w-4 h-4 text-cyan-400" />
+              <span>FAQ</span>
+            </button>
             <button
               onClick={() => onOpenAuth('login')}
               className="px-4 py-2 rounded-xl text-sm font-semibold text-gray-300 hover:text-white hover:bg-gray-800/60 transition-colors cursor-pointer"
@@ -212,12 +223,26 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
           <Logo size="sm" />
           <p>© 2026 AutoCare. Your Vehicle's Personal Maintenance Manager. All rights reserved.</p>
           <div className="flex items-center gap-4 text-gray-400">
+            <button
+              onClick={() => setFaqOpen(true)}
+              className="hover:text-cyan-400 transition-colors cursor-pointer text-xs"
+            >
+              FAQ &amp; Guide
+            </button>
+            <span>•</span>
             <span>Security Protected</span>
             <span>•</span>
             <span>Cloud Firestore</span>
           </div>
         </div>
       </footer>
+
+      {/* Global FAQ Modal for Landing Visitors */}
+      <FAQModal
+        isOpen={faqOpen}
+        onClose={() => setFaqOpen(false)}
+        onOpenFeedback={() => onOpenAuth('signup')}
+      />
     </div>
   );
 };

@@ -130,6 +130,26 @@
         "completedAt": { "type": "string" }
       },
       "required": ["userId", "vehicleId", "title", "reminderType", "dueDate", "status", "priority", "createdAt", "updatedAt"]
+    },
+    "Feedback": {
+      "title": "Feedback",
+      "description": "User feedback and application evaluation",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "submittedAt": { "type": "string" },
+        "easeOfUse": { "type": "string" },
+        "mostUsefulFeature": { "type": "string" },
+        "fuelExpenseHelpful": { "type": "string" },
+        "maintenanceRemindersHelpful": { "type": "string" },
+        "documentManagementHelpful": { "type": "string" },
+        "multipleVehiclesInterest": { "type": "string" },
+        "additionalFeatureRequest": { "type": "string" },
+        "improvementSuggestions": { "type": "string" },
+        "appVersion": { "type": "string" },
+        "devicePlatform": { "type": "string" }
+      },
+      "required": ["userId", "submittedAt", "easeOfUse", "mostUsefulFeature", "fuelExpenseHelpful", "maintenanceRemindersHelpful", "documentManagementHelpful", "multipleVehiclesInterest"]
     }
   },
   "firestore": {
@@ -160,6 +180,10 @@
     "/reminders/{reminderId}": {
       "schema": "Reminder",
       "description": "Vehicle reminders and notifications"
+    },
+    "/feedback/{feedbackId}": {
+      "schema": "Feedback",
+      "description": "User feedback submissions"
     }
   }
 }

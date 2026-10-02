@@ -98,12 +98,18 @@ export const FuelModal: React.FC<FuelModalProps> = ({
 
   const isEvCharging = fuelType === 'EV Charging';
 
-  // Handle Litres and Price per litre updates with auto total calculation
+  // Handle Litres and Price per litre updates with auto dynamic calculations (Bug #1)
   const handleLitresChange = (val: string) => {
     setLitres(val);
     const numLitres = parseFloat(val);
+    const numCost = parseFloat(totalCost);
     const numPrice = parseFloat(pricePerLitre);
-    if (!isNaN(numLitres) && numLitres > 0 && !isNaN(numPrice) && numPrice > 0) {
+    if (!isNaN(numLitres) && numLitres > 0 && !isNaN(numCost) && numCost > 0) {
+      // If total cost is already present, immediately recalculate price per litre
+      const calc = Math.round((numCost / numLitres) * 100) / 100;
+      setPricePerLitre(String(calc));
+      setAutoCalcApplied(true);
+    } else if (!isNaN(numLitres) && numLitres > 0 && !isNaN(numPrice) && numPrice > 0) {
       const calc = Math.round(numLitres * numPrice * 100) / 100;
       setTotalCost(String(calc));
       setAutoCalcApplied(true);
@@ -117,6 +123,17 @@ export const FuelModal: React.FC<FuelModalProps> = ({
     if (!isNaN(numLitres) && numLitres > 0 && !isNaN(numPrice) && numPrice > 0) {
       const calc = Math.round(numLitres * numPrice * 100) / 100;
       setTotalCost(String(calc));
+      setAutoCalcApplied(true);
+    }
+  };
+
+  const handleTotalCostChange = (val: string) => {
+    setTotalCost(val);
+    const numCost = parseFloat(val);
+    const numLitres = parseFloat(litres);
+    if (!isNaN(numCost) && numCost >= 0 && !isNaN(numLitres) && numLitres > 0) {
+      const calc = Math.round((numCost / numLitres) * 100) / 100;
+      setPricePerLitre(String(calc));
       setAutoCalcApplied(true);
     }
   };
@@ -164,12 +181,8 @@ export const FuelModal: React.FC<FuelModalProps> = ({
       }
       parsedLitres = litresNum;
 
-      const priceNum = parseFloat(pricePerLitre);
-      if (isNaN(priceNum) || priceNum <= 0) {
-        setError('Please provide a valid price per litre greater than 0.');
-        return;
-      }
-      parsedPrice = priceNum;
+      // Price per litre is ALWAYS dynamically calculated from totalCost / quantity (Bug #1)
+      parsedPrice = Math.round((costNum / parsedLitres) * 100) / 100;
     }
 
     try {
@@ -338,10 +351,7 @@ export const FuelModal: React.FC<FuelModalProps> = ({
               step="any"
               placeholder="e.g. 2000"
               value={totalCost}
-              onChange={(e) => {
-                setTotalCost(e.target.value);
-                setAutoCalcApplied(false);
-              }}
+              onChange={(e) => handleTotalCostChange(e.target.value)}
               required
               disabled={isSubmitting}
               className="w-full bg-[#0a0d14] border border-gray-700 focus:border-cyan-400 rounded-xl px-3.5 py-2.5 text-sm text-white font-mono placeholder-gray-500 focus:outline-none transition-colors"

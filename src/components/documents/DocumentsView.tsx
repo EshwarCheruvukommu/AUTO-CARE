@@ -18,12 +18,15 @@ import {
   HelpCircle,
   Eye,
   Check,
-  Calendar
+  Calendar,
+  Search,
+  Filter
 } from 'lucide-react';
 import { VehicleDocument, DocumentType } from '../../types';
 import { useVehicle } from '../../context/VehicleContext';
 import { DocumentModal } from './DocumentModal';
 import { ConfirmDialog, Modal } from '../common/Modal';
+import { SectionVisualHeader } from '../common/SectionVisualHeader';
 import { formatDate, formatOdometer, getDocumentStatus } from '../../utils/formatters';
 
 export const DocumentsView: React.FC = () => {
@@ -43,6 +46,19 @@ export const DocumentsView: React.FC = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'All' | 'Valid' | 'Expiring Soon' | 'Expired'>('All');
+
+  const filteredDocuments = documents.filter((doc) => {
+    const { status } = getDocumentStatus(doc.expiryDate);
+    if (statusFilter !== 'All' && status !== statusFilter) return false;
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    const typeMatches = doc.type.toLowerCase().includes(q);
+    const numMatches = (doc.documentNumber || '').toLowerCase().includes(q);
+    const notesMatches = (doc.notes || '').toLowerCase().includes(q);
+    return typeMatches || numMatches || notesMatches;
+  });
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -190,40 +206,62 @@ export const DocumentsView: React.FC = () => {
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-gray-800/60">
-        <div>
-          <h1 className="text-3xl font-black tracking-tight text-white flex items-center gap-2.5">
-            <span>Documents</span>
-            <span className="text-sm font-normal text-gray-400 bg-gray-900 px-2.5 py-0.5 rounded-full border border-gray-800">
-              {documents.length}
-            </span>
-          </h1>
+      {/* 3D Section Visual Header */}
+      <SectionVisualHeader
+        sectionId="documents"
+        customTitle="Documents & Compliance"
+        customTagline="Store and track vehicle insurance, emission certificates (PUC), registration (RC), and warranties with automatic expiration reminders."
+        activeVehicleInfo={`${selectedVehicle.name} • ${selectedVehicle.vehicleNumber} • ${formatOdometer(selectedVehicle.currentOdometer)}`}
+        rightAction={
+          <button
+            onClick={() => setIsAddOpen(true)}
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#00D4C7] via-cyan-500 to-blue-600 hover:from-[#00D4C7] hover:to-blue-500 text-black hover:text-white font-bold text-sm shadow-lg shadow-[#00D4C7]/20 transition-all cursor-pointer btn-3d"
+          >
+            <Plus className="w-4 h-4 text-black group-hover:text-white" />
+            <span>Add Document</span>
+          </button>
+        }
+      />
 
-          {/* Current Vehicle Badge */}
-          <div className="mt-2 flex items-center gap-3 text-sm text-gray-300">
-            <span className="font-bold text-white flex items-center gap-1.5">
-              <Car className="w-4 h-4 text-cyan-400" />
-              <span>{selectedVehicle.name}</span>
-            </span>
-            <span className="text-gray-600">•</span>
-            <span className="font-mono text-cyan-400 font-semibold flex items-center gap-1">
-              <Gauge className="w-3.5 h-3.5" />
-              <span>{formatOdometer(selectedVehicle.currentOdometer)}</span>
-            </span>
-            <span className="text-gray-600">•</span>
-            <span className="text-gray-400 font-mono text-xs">{selectedVehicle.vehicleNumber}</span>
+      {/* Search & Filter Bar (Bug #4) */}
+      {documents.length > 0 && (
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3 rounded-2xl bg-[#0d1017] border border-gray-800">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search documents by type, number, or notes..."
+              className="w-full bg-[#121622] border border-gray-800 focus:border-cyan-500/50 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none transition-colors"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 hover:text-white"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar">
+            {(['All', 'Valid', 'Expiring Soon', 'Expired'] as const).map((st) => (
+              <button
+                key={st}
+                onClick={() => setStatusFilter(st)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                  statusFilter === st
+                    ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
+                    : 'bg-gray-900/60 text-gray-400 hover:text-gray-200 border border-gray-800'
+                }`}
+              >
+                {st}
+              </button>
+            ))}
           </div>
         </div>
-
-        <button
-          onClick={() => setIsAddOpen(true)}
-          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-sm shadow-lg shadow-cyan-500/20 transition-all cursor-pointer self-start sm:self-auto"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add Document</span>
-        </button>
-      </div>
+      )}
 
       {loadingDocuments ? (
         <div className="flex flex-col items-center justify-center min-h-[300px] text-gray-400 space-y-3">
@@ -248,9 +286,13 @@ export const DocumentsView: React.FC = () => {
             + Add Document
           </button>
         </div>
+      ) : filteredDocuments.length === 0 ? (
+        <div className="rounded-2xl border border-gray-800 bg-[#0d1017] p-8 text-center text-xs text-gray-400">
+          No documents match your search query or filter. <button onClick={() => { setSearchQuery(''); setStatusFilter('All'); }} className="text-cyan-400 underline font-semibold ml-1">Reset Filters</button>
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {documents.map((doc) => {
+          {filteredDocuments.map((doc) => {
             const { status, label } = getDocumentStatus(doc.expiryDate);
             const isDanger = status === 'Expired';
             const isWarning = status === 'Expiring Soon';

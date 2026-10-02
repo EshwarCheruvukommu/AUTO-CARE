@@ -36,18 +36,38 @@ export function formatCurrency(amount: number): string {
 }
 
 /**
- * Format odometer kilometers (e.g. 20,640 KM)
+ * Format odometer kilometers (e.g. 20,640 KM or 0 KM)
+ * Distinguishes 0 KM (valid) from missing/undefined (N/A)
  */
-export function formatOdometer(km: number): string {
-  if (isNaN(km)) return '0 KM';
+export function formatOdometer(km?: number | null): string {
+  if (km === undefined || km === null || isNaN(km)) return 'N/A';
   return `${km.toLocaleString('en-IN')} KM`;
+}
+
+/**
+ * Dynamically computes and formats price per litre from totalCost and quantity.
+ * Handles division-by-zero and invalid quantities safely, returning "—".
+ */
+export function formatPricePerLitre(totalCost?: number | null, quantity?: number | null, storedPrice?: number | null): string {
+  if (quantity && quantity > 0 && totalCost !== undefined && totalCost !== null && !isNaN(totalCost)) {
+    const calc = totalCost / quantity;
+    if (isFinite(calc) && calc >= 0) {
+      const formatted = (Math.round(calc * 100) / 100).toFixed(2).replace(/\.00$/, '');
+      return `₹${formatted}/L`;
+    }
+  }
+  if (storedPrice !== undefined && storedPrice !== null && !isNaN(storedPrice) && isFinite(storedPrice) && storedPrice > 0) {
+    const formatted = (Math.round(storedPrice * 100) / 100).toFixed(2).replace(/\.00$/, '');
+    return `₹${formatted}/L`;
+  }
+  return '—';
 }
 
 /**
  * Format date string into Indian-friendly display format (e.g. 30 Sep 2026)
  * Prevents UTC timezone conversion shifts.
  */
-export function formatDate(dateString: string): string {
+export function formatDate(dateString?: string | null): string {
   if (!dateString) return 'N/A';
   try {
     const d = parseLocalDate(dateString);

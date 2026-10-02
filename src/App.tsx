@@ -14,6 +14,7 @@ import { RemindersView } from './components/reminders/RemindersView';
 import { AIAssistantView } from './components/assistant/AIAssistantView';
 import { ProfileView } from './components/profile/ProfileView';
 import { VehicleModal } from './components/vehicles/VehicleModal';
+import { ThemeProvider } from './context/ThemeContext';
 import confetti from 'canvas-confetti';
 
 const MainApp: React.FC = () => {
@@ -101,10 +102,12 @@ const MainApp: React.FC = () => {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <VehicleProvider>
-        <MainApp />
-      </VehicleProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <VehicleProvider>
+          <MainApp />
+        </VehicleProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

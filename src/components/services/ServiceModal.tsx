@@ -6,7 +6,7 @@ interface ServiceModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: Omit<ServiceRecord, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => Promise<void>;
-  initialData?: ServiceRecord | null;
+  initialData?: Partial<ServiceRecord> | null;
   vehicleId: string;
   currentVehicleOdometer: number;
   title: string;
@@ -61,10 +61,10 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
 
   useEffect(() => {
     if (initialData) {
-      setServiceType(initialData.serviceType);
+      setServiceType(initialData.serviceType || 'General Service');
       setServiceDate(initialData.serviceDate || initialData.date || new Date().toISOString().split('T')[0]);
-      setOdometer(String(initialData.odometer));
-      setCost(String(initialData.cost));
+      setOdometer(initialData.odometer !== undefined ? String(initialData.odometer) : String(currentVehicleOdometer || 0));
+      setCost(initialData.cost !== undefined ? String(initialData.cost) : '');
       setServiceCenter(initialData.serviceCenter || '');
       setDescription(initialData.description || initialData.workPerformed || '');
       setNotes(initialData.notes || '');

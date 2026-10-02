@@ -28,8 +28,11 @@ import {
 import { ExpenseRecord, ExpenseCategory } from '../../types';
 import { useVehicle } from '../../context/VehicleContext';
 import { ExpenseModal } from './ExpenseModal';
+import { ExpenseAnalyticsView } from './ExpenseAnalyticsView';
 import { ConfirmDialog } from '../common/Modal';
+import { SectionVisualHeader } from '../common/SectionVisualHeader';
 import { formatCurrency, formatDate } from '../../utils/formatters';
+import { exportExpensesToCSV } from '../../utils/exportReport';
 
 const CATEGORY_CONFIG: Record<
   string, 
@@ -154,6 +157,7 @@ export const ExpensesView: React.FC = () => {
   } = useVehicle();
 
   const [isAddOpen, setIsAddOpen] = useState<boolean>(false);
+  const [activeSubTab, setActiveSubTab] = useState<'records' | 'analytics'>('records');
   const [editingExpense, setEditingExpense] = useState<ExpenseRecord | null>(null);
   const [deletingExpenseId, setDeletingExpenseId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
@@ -287,33 +291,65 @@ export const ExpensesView: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
-        <div>
+      {/* 3D Section Visual Header */}
+      <SectionVisualHeader
+        sectionId="expenses"
+        customTitle="Automotive Financial Analytics"
+        customTagline="Track total cost of ownership, recurring expenditure breakdown, vendor receipts, and budget forecasting."
+        activeVehicleInfo={`${selectedVehicle.name} • ${selectedVehicle.vehicleNumber}`}
+        rightAction={
           <div className="flex items-center gap-2.5 flex-wrap">
-            <h1 className="text-2xl font-black tracking-tight text-white flex items-center gap-2">
-              <span>Expenses & Spending</span>
-            </h1>
-            <span className="text-xs px-2.5 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 font-semibold">
-              {expenses.length} records
-            </span>
-            <span className="text-xs px-2.5 py-1 rounded-full bg-gray-800/80 border border-gray-700 text-gray-300">
-              🚗 {selectedVehicle.name} ({selectedVehicle.vehicleNumber})
-            </span>
+            <button
+              onClick={() => exportExpensesToCSV(selectedVehicle, expenses)}
+              disabled={expenses.length === 0}
+              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-[#1D232B] hover:bg-[#252C35] border border-[#252C35] text-gray-300 hover:text-white font-semibold text-xs transition-all disabled:opacity-40 cursor-pointer btn-3d"
+              title="Export Expense Records to CSV"
+            >
+              <span>Export CSV</span>
+            </button>
+
+            <button
+              onClick={() => setIsAddOpen(true)}
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#20C997] via-emerald-500 to-teal-600 hover:from-[#20C997] hover:to-emerald-400 text-black hover:text-white font-bold text-sm shadow-lg shadow-[#20C997]/20 transition-all cursor-pointer btn-3d"
+            >
+              <Plus className="w-4 h-4 text-black group-hover:text-white" />
+              <span>Add Expense</span>
+            </button>
           </div>
-          <p className="text-sm text-gray-400 mt-1">
-            Track and categorize all maintenance, fuel, insurance, tolls, and operating costs for your vehicle.
-          </p>
-        </div>
+        }
+      />
+
+      {/* Sub Tabs: Expense Records vs Comprehensive Cost Analytics */}
+      <div className="flex items-center gap-2 border-b border-gray-800 pb-3">
+        <button
+          onClick={() => setActiveSubTab('records')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            activeSubTab === 'records'
+              ? 'bg-cyan-500/15 border border-cyan-500/40 text-cyan-300 shadow-md shadow-cyan-950/20'
+              : 'text-gray-400 hover:text-white hover:bg-gray-900/60'
+          }`}
+        >
+          <Receipt className="w-3.5 h-3.5" />
+          <span>Expense Records ({expenses.length})</span>
+        </button>
 
         <button
-          onClick={() => setIsAddOpen(true)}
-          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-semibold text-sm shadow-lg shadow-cyan-500/20 transition-all cursor-pointer self-start sm:self-auto"
+          onClick={() => setActiveSubTab('analytics')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            activeSubTab === 'analytics'
+              ? 'bg-gradient-to-r from-cyan-500/20 to-indigo-500/20 border border-cyan-500/50 text-cyan-300 shadow-md shadow-cyan-950/30'
+              : 'text-gray-400 hover:text-white hover:bg-gray-900/60'
+          }`}
         >
-          <Plus className="w-4 h-4" />
-          <span>Add Expense</span>
+          <PieChart className="w-3.5 h-3.5 text-cyan-400" />
+          <span>Cost Analytics &amp; Running Cost/KM</span>
         </button>
       </div>
+
+      {activeSubTab === 'analytics' ? (
+        <ExpenseAnalyticsView />
+      ) : (
+        <>
 
       {/* Metrics Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -690,6 +726,8 @@ export const ExpensesView: React.FC = () => {
             })}
           </div>
         </div>
+      )}
+        </>
       )}
 
       {/* Add Expense Modal */}

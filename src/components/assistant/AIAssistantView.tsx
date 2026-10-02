@@ -15,8 +15,12 @@ import {
   ShieldCheck,
   ChevronRight,
   Info,
-  Clock
+  Clock,
+  TrendingUp,
+  Compass,
+  Calculator
 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 import { useVehicle } from '../../context/VehicleContext';
 
 interface ChatMessage {
@@ -32,79 +36,130 @@ interface AIAssistantViewProps {
 }
 
 export const AIAssistantView: React.FC<AIAssistantViewProps> = ({ onNavigateTab }) => {
-  const { selectedVehicle, vehicles } = useVehicle();
+  const { currentUser } = useAuth();
+  const { 
+    selectedVehicle, 
+    vehicles,
+    documents,
+    services,
+    fuelRecords,
+    expenses,
+    allReminders
+  } = useVehicle();
 
   const [inputMessage, setInputMessage] = useState('');
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  // Isolated conversations per vehicle ID to guarantee zero cross-vehicle data contamination
+  const [conversationsByVehicle, setConversationsByVehicle] = useState<Record<string, ChatMessage[]>>({});
   const [isLoading, setIsLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Suggested questions from specification (Section 6)
+  const activeVehicleId = selectedVehicle?.id || '';
+  const messages = activeVehicleId ? (conversationsByVehicle[activeVehicleId] || []) : [];
+
+  // Suggested questions tailored for Phase 10.5 Advanced Vehicle Intelligence
   const suggestedQuestions = [
-    'When is my next service?',
-    'When does my insurance expire?',
-    "What's my current mileage?",
-    'How much did I spend this month?',
-    'Show my recent service history',
+    'Give me a complete AI analysis of my vehicle.',
+    'Show me my vehicle trends.',
+    'Estimate my vehicle expenses for next month.',
+    'Is my car ready for a long trip?',
+    'Based on my records, what maintenance may need attention?',
+    'Where am I spending the most on this vehicle?',
     'Which documents are expiring soon?',
+    'What should I take care of next?',
   ];
 
-  // Quick Insights cards from specification (Section 9)
+  // Quick Insights cards configured for Phase 10.5 (Features 9–15)
   const quickInsights = [
     {
-      id: 'overview',
-      title: 'Vehicle Overview',
-      desc: 'Specs, odometer & active status',
-      icon: Car,
+      id: 'analysis',
+      title: 'Complete AI Analysis',
+      desc: 'Full multi-category vehicle audit',
+      icon: Sparkles,
       color: 'text-cyan-400',
       bgColor: 'bg-cyan-950/40 border-cyan-500/30',
-      prompt: 'Give me a summary of my current vehicle',
+      prompt: 'Give me a complete AI analysis of my vehicle.',
+    },
+    {
+      id: 'overview',
+      title: 'Vehicle Overview & Health',
+      desc: 'Management summary & status',
+      icon: Car,
+      color: 'text-blue-400',
+      bgColor: 'bg-blue-950/40 border-blue-500/30',
+      prompt: 'How is my vehicle doing overall?',
     },
     {
       id: 'maintenance',
-      title: 'Maintenance',
-      desc: 'Service logs & intervals',
+      title: 'Maintenance Prediction',
+      desc: 'History, intervals & due items',
       icon: Wrench,
       color: 'text-purple-400',
       bgColor: 'bg-purple-950/40 border-purple-500/30',
-      prompt: 'When is my next scheduled maintenance or service?',
+      prompt: 'Based on my records, what maintenance may need attention?',
+    },
+    {
+      id: 'trends',
+      title: 'Advanced Trend Analysis',
+      desc: 'Mileage, spending & service trends',
+      icon: TrendingUp,
+      color: 'text-emerald-400',
+      bgColor: 'bg-emerald-950/40 border-emerald-500/30',
+      prompt: 'Show me my vehicle trends.',
+    },
+    {
+      id: 'forecast',
+      title: 'Cost Forecast',
+      desc: 'Estimated monthly budget & spend',
+      icon: Calculator,
+      color: 'text-amber-400',
+      bgColor: 'bg-amber-950/40 border-amber-500/30',
+      prompt: 'Estimate my vehicle expenses for next month.',
+    },
+    {
+      id: 'trip',
+      title: 'Trip Readiness Assistant',
+      desc: 'Pre-trip checklist & compliance audit',
+      icon: Compass,
+      color: 'text-teal-400',
+      bgColor: 'bg-teal-950/40 border-teal-500/30',
+      prompt: 'Is my car ready for a long trip?',
     },
     {
       id: 'documents',
-      title: 'Documents',
-      desc: 'Insurance, PUC & registration',
+      title: 'Document Intelligence',
+      desc: 'Insurance, PUC & expirations',
       icon: FileText,
-      color: 'text-blue-400',
-      bgColor: 'bg-blue-950/40 border-blue-500/30',
-      prompt: 'Which vehicle documents or certificates expire soon?',
+      color: 'text-sky-400',
+      bgColor: 'bg-sky-950/40 border-sky-500/30',
+      prompt: 'Which documents are expiring soon?',
     },
     {
       id: 'fuel',
       title: 'Fuel & Mileage',
-      desc: 'Consumption & fill-ups',
+      desc: 'Consumption & efficiency trends',
       icon: Fuel,
-      color: 'text-amber-400',
-      bgColor: 'bg-amber-950/40 border-amber-500/30',
-      prompt: 'What is my average mileage and fuel consumption?',
+      color: 'text-orange-400',
+      bgColor: 'bg-orange-950/40 border-orange-500/30',
+      prompt: 'How is my fuel efficiency?',
     },
     {
       id: 'expenses',
-      title: 'Expenses',
-      desc: 'Cost breakdown & receipts',
+      title: 'Expense Breakdown',
+      desc: 'Category costs & spending comparison',
       icon: Receipt,
-      color: 'text-emerald-400',
-      bgColor: 'bg-emerald-950/40 border-emerald-500/30',
-      prompt: 'Break down my recent vehicle expenses',
+      color: 'text-rose-400',
+      bgColor: 'bg-rose-950/40 border-rose-500/30',
+      prompt: 'Where am I spending the most on this vehicle?',
     },
     {
       id: 'reminders',
-      title: 'Reminders',
-      desc: 'Upcoming deadlines & tasks',
+      title: 'Smart Recommendations',
+      desc: 'Prioritized grounded action items',
       icon: Bell,
       color: 'text-red-400',
       bgColor: 'bg-red-950/40 border-red-500/30',
-      prompt: 'Show all upcoming vehicle reminders and alerts',
+      prompt: 'What should I take care of next?',
     },
   ];
 
@@ -113,22 +168,53 @@ export const AIAssistantView: React.FC<AIAssistantViewProps> = ({ onNavigateTab 
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading]);
 
-  // Click suggestion chip -> Populates chat input & focuses
+  // Click suggestion chip -> Triggers question directly
   const handleSelectSuggestion = (question: string) => {
-    setInputMessage(question);
-    inputRef.current?.focus();
+    handleSendMessage(undefined, question);
   };
 
   // Send message handler connected to Gemini backend
-  const handleSendMessage = async (e?: React.FormEvent) => {
+  const handleSendMessage = async (e?: React.FormEvent, customText?: string) => {
     if (e) e.preventDefault();
-    const trimmed = inputMessage.trim();
+    const trimmed = (customText !== undefined ? customText : inputMessage).trim();
     if (!trimmed || isLoading) return;
 
     const now = new Date();
     const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-    // 1. Add user message
+    if (!currentUser) {
+      if (activeVehicleId) {
+        setConversationsByVehicle((prevMap) => ({
+          ...prevMap,
+          [activeVehicleId]: [
+            ...(prevMap[activeVehicleId] || []),
+            {
+              id: `user-${Date.now()}`,
+              sender: 'user',
+              text: trimmed,
+              timestamp: timeString,
+            },
+            {
+              id: `ai-${Date.now()}`,
+              sender: 'assistant',
+              text: 'Please sign in to ask AutoCare AI about your vehicle records.',
+              timestamp: timeString,
+            },
+          ],
+        }));
+      }
+      setInputMessage('');
+      return;
+    }
+
+    if (!selectedVehicle) {
+      setInputMessage('');
+      return;
+    }
+
+    const requestVehicleId = selectedVehicle.id;
+
+    // 1. Add user message to this vehicle's thread
     const userMsg: ChatMessage = {
       id: `user-${Date.now()}`,
       sender: 'user',
@@ -136,71 +222,83 @@ export const AIAssistantView: React.FC<AIAssistantViewProps> = ({ onNavigateTab 
       timestamp: timeString,
     };
 
-    setMessages((prev) => [...prev, userMsg]);
+    setConversationsByVehicle((prevMap) => ({
+      ...prevMap,
+      [requestVehicleId]: [...(prevMap[requestVehicleId] || []), userMsg],
+    }));
     setInputMessage('');
     setIsLoading(true);
 
     try {
-      // Build conversation context from previous messages
-      const historyPayload = messages.map((m) => ({
+      // Get fresh Firebase ID token for authentication
+      const idToken = await currentUser.getIdToken();
+
+      // Build conversation context strictly from this vehicle's previous messages
+      const currentHistory = conversationsByVehicle[requestVehicleId] || [];
+      const historyPayload = currentHistory.map((m) => ({
         role: m.sender === 'user' ? 'user' : 'assistant',
         text: m.text,
       }));
 
       const res = await fetch('/api/ai/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`,
+        },
         body: JSON.stringify({
           message: trimmed,
           history: historyPayload,
+          vehicleId: requestVehicleId,
+          clientVehicleData: {
+            vehicle: selectedVehicle,
+            documents,
+            services,
+            fuelRecords,
+            expenses,
+            reminders: allReminders,
+          },
         }),
       });
 
       const data = await res.json();
       const replyTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+      let replyText = '';
       if (res.status === 503 && data.unconfigured) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: `ai-${Date.now()}`,
-            sender: 'assistant',
-            text: data.response || 'AutoCare AI is not connected yet. Please configure the Gemini API connection.',
-            timestamp: replyTime,
-          },
-        ]);
+        replyText = data.response || 'AutoCare AI is not connected yet. Please configure the Gemini API connection.';
       } else if (!res.ok) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: `ai-${Date.now()}`,
-            sender: 'assistant',
-            text: data.error || "Sorry, I couldn't process that request right now. Please try again.",
-            timestamp: replyTime,
-          },
-        ]);
+        replyText = data.error || "Sorry, I couldn't retrieve your vehicle information right now. Please try again.";
       } else {
-        setMessages((prev) => [
-          ...prev,
+        replyText = data.response || 'I could not generate a response. Please try again.';
+      }
+
+      setConversationsByVehicle((prevMap) => ({
+        ...prevMap,
+        [requestVehicleId]: [
+          ...(prevMap[requestVehicleId] || []),
           {
             id: `ai-${Date.now()}`,
             sender: 'assistant',
-            text: data.response || 'I could not generate a response. Please try again.',
+            text: replyText,
             timestamp: replyTime,
           },
-        ]);
-      }
+        ],
+      }));
     } catch {
       const replyTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `ai-${Date.now()}`,
-          sender: 'assistant',
-          text: "Sorry, I couldn't process that request right now. Please check your connection and try again.",
-          timestamp: replyTime,
-        },
-      ]);
+      setConversationsByVehicle((prevMap) => ({
+        ...prevMap,
+        [requestVehicleId]: [
+          ...(prevMap[requestVehicleId] || []),
+          {
+            id: `ai-${Date.now()}`,
+            sender: 'assistant',
+            text: "Sorry, I couldn't retrieve your vehicle information right now. Please check your connection and try again.",
+            timestamp: replyTime,
+          },
+        ],
+      }));
     } finally {
       setIsLoading(false);
       setTimeout(() => {
@@ -210,7 +308,12 @@ export const AIAssistantView: React.FC<AIAssistantViewProps> = ({ onNavigateTab 
   };
 
   const handleClearConversation = () => {
-    setMessages([]);
+    if (activeVehicleId) {
+      setConversationsByVehicle((prevMap) => ({
+        ...prevMap,
+        [activeVehicleId]: [],
+      }));
+    }
     setInputMessage('');
     inputRef.current?.focus();
   };
@@ -220,9 +323,20 @@ export const AIAssistantView: React.FC<AIAssistantViewProps> = ({ onNavigateTab 
       {/* ================================================== */}
       {/* 1. ASSISTANT HEADER (Section 3 & 10) */}
       {/* ================================================== */}
-      <div className="relative rounded-3xl overflow-hidden border border-cyan-500/20 bg-gradient-to-r from-[#0d131f] via-[#101726] to-[#0d131f] p-6 sm:p-7 shadow-2xl">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-1/4 w-60 h-60 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="relative rounded-3xl overflow-hidden border border-[#252C35] bg-[#151A20] p-6 sm:p-7 shadow-2xl card-3d group">
+        {/* Dynamic Automotive AI Neural Background */}
+        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+          <img
+            src="https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=1600&q=85"
+            alt="Automotive Artificial Intelligence Data Interface"
+            className="w-full h-full object-cover object-center filter saturate-[1.2] contrast-[1.1] opacity-25 group-hover:scale-105 transition-transform duration-1000"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0B0E14] via-[#0B0E14]/85 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0B0E14] via-transparent to-[#0B0E14]/50" />
+          <div className="absolute top-0 right-0 w-80 h-80 bg-[#00D4C7]/15 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 left-1/4 w-60 h-60 bg-purple-600/15 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute inset-0 telemetry-grid opacity-25" />
+        </div>
 
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-4">
@@ -359,7 +473,7 @@ export const AIAssistantView: React.FC<AIAssistantViewProps> = ({ onNavigateTab 
 
                 <div className="text-[11px] text-gray-500 flex items-center gap-1.5 pt-2">
                   <Info className="w-3.5 h-3.5 text-gray-500" />
-                  <span>Click any question to prefill the chat input below.</span>
+                  <span>Click any question to ask AutoCare AI immediately.</span>
                 </div>
               </div>
             ) : (
@@ -479,7 +593,7 @@ export const AIAssistantView: React.FC<AIAssistantViewProps> = ({ onNavigateTab 
               Select any topic below to prefill automotive queries for your active vehicle.
             </p>
 
-            <div className="space-y-2.5">
+            <div className="space-y-2.5 max-h-[500px] overflow-y-auto pr-1 custom-scrollbar">
               {quickInsights.map((card) => {
                 const Icon = card.icon;
                 return (
@@ -516,7 +630,7 @@ export const AIAssistantView: React.FC<AIAssistantViewProps> = ({ onNavigateTab 
               <span>Vehicle Data Isolation</span>
             </div>
             <p className="text-xs text-gray-400 leading-relaxed">
-              When full model intelligence is enabled in the next phase, queries will operate strictly on your authenticated Firestore documents and selected vehicle.
+              Queries operate strictly on your authenticated Firestore records for your currently selected vehicle in real time. Read-only and completely private.
             </p>
             <div className="p-3 rounded-2xl bg-cyan-950/20 border border-cyan-500/20 text-cyan-300 text-xs flex items-center gap-2">
               <Info className="w-4 h-4 shrink-0 text-cyan-400" />
