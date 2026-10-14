@@ -342,21 +342,21 @@ export const ProfileView: React.FC = () => {
       {/* ================================================== */}
       {/* 1. PROFILE HERO / IDENTITY CARD */}
       {/* ================================================== */}
-      <div className="relative rounded-3xl overflow-hidden border border-cyan-500/20 bg-gradient-to-r from-[#0d131f] via-[#101726] to-[#0d131f] p-6 sm:p-8 shadow-2xl">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-1/3 w-60 h-60 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="relative rounded-3xl overflow-hidden border border-[#1677FF]/30 bg-gradient-to-r from-[#07111F] via-[#0B1628] to-[#0F1F35] p-6 sm:p-8 shadow-2xl">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-[#1677FF]/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-1/3 w-60 h-60 bg-[#00D9FF]/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center gap-6">
           {/* Profile Avatar / Initial */}
-          <div className="w-20 h-20 rounded-2xl bg-gradient-to-tr from-cyan-600 via-blue-600 to-indigo-600 p-0.5 shadow-xl shadow-cyan-500/20 shrink-0">
-            <div className="w-full h-full rounded-[14px] bg-[#0c101a] flex items-center justify-center text-3xl font-black text-cyan-300">
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-tr from-[#1677FF] to-[#00D9FF] p-0.5 shadow-xl shadow-[#1677FF]/25 shrink-0">
+            <div className="w-full h-full rounded-[14px] bg-[#07111F] flex items-center justify-center text-3xl font-black text-[#00D9FF]">
               {initialLetter}
             </div>
           </div>
 
           <div className="space-y-1.5 min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-[#1677FF]/15 text-[#00D9FF] border border-[#1677FF]/30">
                 Vehicle Owner
               </span>
               <span className="px-2.5 py-0.5 rounded-full text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-medium flex items-center gap-1">

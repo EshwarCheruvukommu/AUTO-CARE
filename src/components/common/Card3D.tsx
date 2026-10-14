@@ -11,7 +11,7 @@ export const Card3D: React.FC<Card3DProps> = ({
   children,
   className = '',
   glowOnHover = true,
-  accentColor = '#00D4C7',
+  accentColor = '#1677FF',
   ...props
 }) => {
   const cardRef = useRef<HTMLDivElement>(null);
@@ -56,8 +56,8 @@ export const Card3D: React.FC<Card3DProps> = ({
         transformStyle: 'preserve-3d',
         transition: isHovered ? 'transform 0.1s ease-out' : 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease',
       }}
-      className={`relative rounded-2xl bg-[#151A20] border border-[#252C35] transition-all duration-300 ${
-        isHovered && glowOnHover ? 'border-[#00D4C7]/40 shadow-2xl' : 'shadow-lg'
+      className={`relative rounded-2xl bg-[#0F1F35] border border-[#1D3552] transition-all duration-300 ${
+        isHovered && glowOnHover ? 'border-[#00D9FF]/40 shadow-2xl shadow-[#1677FF]/15' : 'shadow-lg'
       } ${className}`}
       {...props}
     >

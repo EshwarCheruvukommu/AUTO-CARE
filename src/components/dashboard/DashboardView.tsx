@@ -322,6 +322,139 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       .slice(0, 3);
   }, [services]);
 
+  // 9. Calculations: Upcoming Maintenance based on mileage intervals
+  const upcomingMaintenanceSchedule = useMemo(() => {
+    if (!selectedVehicle) return [];
+
+    const currentOdo = selectedVehicle.currentOdometer || 0;
+
+    // Standard automotive preventive maintenance schedules with typical mileage intervals
+    const MAINTENANCE_SCHEDULE_DEFS = [
+      {
+        id: 'engine-oil',
+        name: 'Engine Oil & Filter Replacement',
+        serviceType: 'Oil Change',
+        intervalKm: 10000,
+        criticalAtKm: 1000,
+        dueSoonThresholdKm: 2000,
+        icon: '🛢️',
+        description: 'Synthetic engine oil drain & oil filter change',
+      },
+      {
+        id: 'tyre-rotation',
+        name: 'Tyre Rotation & Wheel Balancing',
+        serviceType: 'Tyre Service',
+        intervalKm: 8000,
+        criticalAtKm: 800,
+        dueSoonThresholdKm: 1500,
+        icon: '🔄',
+        description: '4-wheel rotation, balance & tread wear check',
+      },
+      {
+        id: 'brake-inspection',
+        name: 'Brake Fluid & Brake Pads Inspection',
+        serviceType: 'Brake Service',
+        intervalKm: 20000,
+        criticalAtKm: 1500,
+        dueSoonThresholdKm: 3000,
+        icon: '🛑',
+        description: 'Pad wear, disc thickness & brake fluid moisture check',
+      },
+      {
+        id: 'general-service',
+        name: 'Major Comprehensive Inspection',
+        serviceType: 'General Service',
+        intervalKm: 15000,
+        criticalAtKm: 1200,
+        dueSoonThresholdKm: 2500,
+        icon: '🔧',
+        description: 'Multi-point inspection, air filter & spark plug / belts',
+      },
+      {
+        id: 'ac-cabin-filter',
+        name: 'AC System & Cabin Air Filter',
+        serviceType: 'AC Service',
+        intervalKm: 15000,
+        criticalAtKm: 1000,
+        dueSoonThresholdKm: 2500,
+        icon: '❄️',
+        description: 'Dust/pollen pollen filter renewal & cooling condenser wash',
+      },
+      {
+        id: 'battery-check',
+        name: 'Battery Health & Terminal Servicing',
+        serviceType: 'Battery Replacement',
+        intervalKm: 25000,
+        criticalAtKm: 2000,
+        dueSoonThresholdKm: 4000,
+        icon: '⚡',
+        description: 'Cranking amps, state of charge & electrolyte condition',
+      },
+    ];
+
+    return MAINTENANCE_SCHEDULE_DEFS.map((item) => {
+      // Find the latest service record matching this service type
+      const matchingServices = services
+        .filter((s) => s.serviceType === item.serviceType || (s.serviceType === 'General Service' && item.serviceType === 'Oil Change'))
+        .sort((a, b) => {
+          const odoA = a.odometer || 0;
+          const odoB = b.odometer || 0;
+          return odoB - odoA;
+        });
+
+      const lastServiceOdometer = matchingServices.length > 0 ? (matchingServices[0].odometer || 0) : 0;
+      const lastServiceDate = matchingServices.length > 0 ? (matchingServices[0].serviceDate || (matchingServices[0] as any).date) : null;
+
+      // Calculate target due odometer
+      let dueAtOdometer: number;
+      if (lastServiceOdometer > 0) {
+        dueAtOdometer = lastServiceOdometer + item.intervalKm;
+      } else {
+        // If never logged, compute next standard milestone interval (e.g., nearest 10,000 km multiple)
+        const cyclesPassed = Math.floor(currentOdo / item.intervalKm);
+        dueAtOdometer = (cyclesPassed + 1) * item.intervalKm;
+      }
+
+      // Remaining distance until service is due
+      const kmRemaining = dueAtOdometer - currentOdo;
+      
+      // Calculate cycle progress percentage (0% = just serviced, 100% = due right now)
+      const cycleStartOdo = lastServiceOdometer > 0 ? lastServiceOdometer : Math.max(0, dueAtOdometer - item.intervalKm);
+      const kmDrivenInCycle = Math.max(0, currentOdo - cycleStartOdo);
+      const progressPercent = Math.min(100, Math.max(0, Math.round((kmDrivenInCycle / item.intervalKm) * 100)));
+
+      let status: 'Overdue' | 'Due Soon' | 'On Track';
+      let statusColor: string;
+      let barGradient: string;
+
+      if (kmRemaining <= 0) {
+        status = 'Overdue';
+        statusColor = 'text-red-400 bg-red-950/40 border-red-500/30';
+        barGradient = 'bg-gradient-to-r from-red-600 to-rose-500';
+      } else if (kmRemaining <= item.dueSoonThresholdKm) {
+        status = 'Due Soon';
+        statusColor = 'text-amber-400 bg-amber-950/40 border-amber-500/30';
+        barGradient = 'bg-gradient-to-r from-amber-500 to-yellow-400';
+      } else {
+        status = 'On Track';
+        statusColor = 'text-emerald-400 bg-emerald-950/40 border-emerald-500/30';
+        barGradient = 'bg-gradient-to-r from-cyan-500 to-blue-500';
+      }
+
+      return {
+        ...item,
+        lastServiceOdometer,
+        lastServiceDate,
+        dueAtOdometer,
+        kmRemaining,
+        progressPercent,
+        status,
+        statusColor,
+        barGradient,
+      };
+    }).sort((a, b) => a.kmRemaining - b.kmRemaining);
+  }, [selectedVehicle, services]);
+
   // If user has zero vehicles, show friendly onboarding state (Section 3 & 13)
   if (!loadingVehicles && vehicles.length === 0) {
     return (
@@ -424,26 +557,26 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* ================================================== */}
       {/* 2. QUICK ACTIONS (Section 4) */}
       {/* ================================================== */}
-      <div className="p-4 rounded-3xl bg-[#151A20] border border-[#252C35] shadow-lg">
+      <div className="p-4 rounded-3xl bg-[#0F1F35] border border-[#1D3552] shadow-lg">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-xs font-mono font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-[#00D4C7]" />
-            <span>Telemetry Quick Commands</span>
+          <span className="text-xs font-mono font-bold text-[#A9B8CC] uppercase tracking-wider flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-[#00D9FF]" />
+            <span>Vehicle Quick Actions</span>
           </span>
-          <span className="text-[11px] text-gray-400">Record new vehicle telemetry instantly</span>
+          <span className="text-[11px] text-[#71839A]">Manage logs, fuel, and records instantly</span>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
           {/* + Add Vehicle */}
           <button
             onClick={onOpenAddVehicle}
-            className="p-3 rounded-2xl bg-[#1D232B] hover:bg-[#252C35] border border-[#252C35] hover:border-[#00D4C7]/50 text-left transition-all group cursor-pointer shadow-sm btn-3d"
+            className="p-3 rounded-2xl bg-[#0B1628] hover:bg-[#122A46] border border-[#1D3552] hover:border-[#1677FF]/50 text-left transition-all group cursor-pointer shadow-sm btn-3d"
           >
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-[#00D4C7]/10 border border-[#00D4C7]/30 flex items-center justify-center text-[#00D4C7] group-hover:scale-105 transition-transform">
+              <div className="w-8 h-8 rounded-xl bg-[#1677FF]/10 border border-[#1677FF]/30 flex items-center justify-center text-[#00D9FF] group-hover:scale-105 transition-transform">
                 <Car className="w-4 h-4" />
               </div>
-              <span className="text-xs font-bold text-white group-hover:text-[#00D4C7] transition-colors">
+              <span className="text-xs font-bold text-white group-hover:text-[#00D9FF] transition-colors">
                 + Vehicle
               </span>
             </div>
@@ -452,13 +585,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {/* + Add Document */}
           <button
             onClick={() => setIsAddDocOpen(true)}
-            className="p-3 rounded-2xl bg-[#1D232B] hover:bg-[#252C35] border border-[#252C35] hover:border-blue-500/50 text-left transition-all group cursor-pointer shadow-sm btn-3d"
+            className="p-3 rounded-2xl bg-[#0B1628] hover:bg-[#122A46] border border-[#1D3552] hover:border-[#2196FF]/50 text-left transition-all group cursor-pointer shadow-sm btn-3d"
           >
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400 group-hover:scale-105 transition-transform">
+              <div className="w-8 h-8 rounded-xl bg-[#2196FF]/10 border border-[#2196FF]/30 flex items-center justify-center text-[#2196FF] group-hover:scale-105 transition-transform">
                 <FileText className="w-4 h-4" />
               </div>
-              <span className="text-xs font-bold text-white group-hover:text-blue-400 transition-colors">
+              <span className="text-xs font-bold text-white group-hover:text-[#67E8F9] transition-colors">
                 + Document
               </span>
             </div>
@@ -467,13 +600,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {/* + Add Service */}
           <button
             onClick={() => setIsAddServiceOpen(true)}
-            className="p-3 rounded-2xl bg-[#1D232B] hover:bg-[#252C35] border border-[#252C35] hover:border-[#00D4C7]/50 text-left transition-all group cursor-pointer shadow-sm btn-3d"
+            className="p-3 rounded-2xl bg-[#0B1628] hover:bg-[#122A46] border border-[#1D3552] hover:border-[#1677FF]/50 text-left transition-all group cursor-pointer shadow-sm btn-3d"
           >
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-[#00D4C7]/10 border border-[#00D4C7]/30 flex items-center justify-center text-[#00D4C7] group-hover:scale-105 transition-transform">
+              <div className="w-8 h-8 rounded-xl bg-[#1677FF]/10 border border-[#1677FF]/30 flex items-center justify-center text-[#00D9FF] group-hover:scale-105 transition-transform">
                 <Wrench className="w-4 h-4" />
               </div>
-              <span className="text-xs font-bold text-white group-hover:text-[#00D4C7] transition-colors">
+              <span className="text-xs font-bold text-white group-hover:text-[#00D9FF] transition-colors">
                 + Service
               </span>
             </div>
@@ -482,7 +615,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {/* + Add Fuel */}
           <button
             onClick={() => setIsAddFuelOpen(true)}
-            className="p-3 rounded-2xl bg-[#1D232B] hover:bg-[#252C35] border border-[#252C35] hover:border-amber-500/50 text-left transition-all group cursor-pointer shadow-sm btn-3d"
+            className="p-3 rounded-2xl bg-[#0B1628] hover:bg-[#122A46] border border-[#1D3552] hover:border-amber-500/50 text-left transition-all group cursor-pointer shadow-sm btn-3d"
           >
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:scale-105 transition-transform">
@@ -497,7 +630,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {/* + Add Expense */}
           <button
             onClick={() => setIsAddExpenseOpen(true)}
-            className="p-3 rounded-2xl bg-[#1D232B] hover:bg-[#252C35] border border-[#252C35] hover:border-emerald-500/50 text-left transition-all group cursor-pointer shadow-sm btn-3d"
+            className="p-3 rounded-2xl bg-[#0B1628] hover:bg-[#122A46] border border-[#1D3552] hover:border-emerald-500/50 text-left transition-all group cursor-pointer shadow-sm btn-3d"
           >
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 group-hover:scale-105 transition-transform">
@@ -512,7 +645,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {/* + Add Reminder */}
           <button
             onClick={() => setIsAddReminderOpen(true)}
-            className="p-3 rounded-2xl bg-[#1D232B] hover:bg-[#252C35] border border-[#252C35] hover:border-purple-500/50 text-left transition-all group cursor-pointer shadow-sm btn-3d"
+            className="p-3 rounded-2xl bg-[#0B1628] hover:bg-[#122A46] border border-[#1D3552] hover:border-purple-500/50 text-left transition-all group cursor-pointer shadow-sm btn-3d"
           >
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 group-hover:scale-105 transition-transform">
@@ -534,20 +667,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <Card3D 
           onClick={() => onNavigateTab('services')}
           className="p-4 cursor-pointer group flex flex-col justify-between"
-          accentColor="#00D4C7"
+          accentColor="#1677FF"
         >
-          <div className="flex items-center justify-between text-gray-400">
+          <div className="flex items-center justify-between text-[#A9B8CC]">
             <span className="text-[11px] font-bold uppercase tracking-wider">
               Total Service Cost
             </span>
-            <div className="p-1.5 rounded-lg bg-[#00D4C7]/10 text-[#00D4C7] group-hover:scale-110 transition-transform">
+            <div className="p-1.5 rounded-lg bg-[#1677FF]/15 text-[#00D9FF] group-hover:scale-110 transition-transform">
               <Wrench className="w-3.5 h-3.5" />
             </div>
           </div>
-          <div className="mt-3 text-xl font-black text-[#00D4C7] font-mono">
+          <div className="mt-3 text-xl font-black text-[#00D9FF] font-mono">
             {formatCurrency(totalServiceCost)}
           </div>
-          <div className="mt-1 text-[10px] text-gray-400">
+          <div className="mt-1 text-[10px] text-[#71839A]">
             Logged services
           </div>
         </Card3D>
@@ -644,7 +777,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <Card3D 
           onClick={() => onNavigateTab('reminders')}
           className="p-4 cursor-pointer group flex flex-col justify-between"
-          accentColor={activeRemindersCount > 0 ? '#FF4D4F' : '#00D4C7'}
+          accentColor={activeRemindersCount > 0 ? '#EF4444' : '#1677FF'}
         >
           <div className="flex items-center justify-between text-gray-400">
             <span className="text-[11px] font-bold uppercase tracking-wider">
@@ -1009,6 +1142,118 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               ))}
             </div>
           )}
+        </div>
+      </div>
+
+      {/* ================================================== */}
+      {/* UPCOMING MAINTENANCE BY MILEAGE INTERVALS (Progress Bars) */}
+      {/* ================================================== */}
+      <div className="p-6 rounded-3xl bg-[#0f131c] border border-gray-800/80 space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-gray-800/60">
+          <div className="flex items-center gap-2.5">
+            <span className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+              <Wrench className="w-4 h-4" />
+            </span>
+            <div>
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <span>Upcoming Maintenance Schedule</span>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-mono font-medium">
+                  {formatOdometer(selectedVehicle.currentOdometer)}
+                </span>
+              </h3>
+              <p className="text-xs text-gray-400">
+                Calculated preventive maintenance intervals with real-time mileage progress
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsAddServiceOpen(true)}
+              className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 border border-cyan-500/30 transition-all cursor-pointer flex items-center gap-1.5"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Log Service</span>
+            </button>
+            <button
+              onClick={() => onNavigateTab('services')}
+              className="text-xs font-semibold text-gray-400 hover:text-white transition-colors cursor-pointer"
+            >
+              View History →
+            </button>
+          </div>
+        </div>
+
+        {/* Maintenance Progress Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {upcomingMaintenanceSchedule.map((item) => (
+            <div
+              key={item.id}
+              className="p-4 rounded-2xl bg-[#0a0d14] border border-gray-800 hover:border-gray-700/80 transition-all flex flex-col justify-between space-y-3"
+            >
+              {/* Header: Icon + Title + Status badge */}
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className="text-xl p-1.5 rounded-xl bg-gray-900 border border-gray-800 shrink-0">
+                    {item.icon}
+                  </span>
+                  <div className="min-w-0">
+                    <h4 className="text-sm font-bold text-white truncate" title={item.name}>
+                      {item.name}
+                    </h4>
+                    <span className="text-[11px] text-gray-400">
+                      Every {item.intervalKm.toLocaleString()} km
+                    </span>
+                  </div>
+                </div>
+
+                <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border shrink-0 ${item.statusColor}`}>
+                  {item.status}
+                </span>
+              </div>
+
+              {/* Progress Bar & percentage */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-gray-400 font-medium">Interval Wear / Progress</span>
+                  <span className={`font-mono font-bold ${
+                    item.status === 'Overdue' ? 'text-red-400' : item.status === 'Due Soon' ? 'text-amber-400' : 'text-cyan-400'
+                  }`}>
+                    {item.progressPercent}%
+                  </span>
+                </div>
+
+                <div className="h-2.5 w-full bg-gray-900 rounded-full overflow-hidden border border-gray-800/80">
+                  <div
+                    style={{ width: `${Math.max(item.progressPercent, 4)}%` }}
+                    className={`h-full ${item.barGradient} rounded-full transition-all duration-500 shadow-sm`}
+                  />
+                </div>
+              </div>
+
+              {/* Target Odometer & Remaining Km */}
+              <div className="pt-2 border-t border-gray-800/60 flex items-center justify-between text-xs">
+                <div>
+                  <span className="text-[10px] text-gray-500 block uppercase font-medium">Due At</span>
+                  <span className="font-mono font-bold text-gray-200">
+                    {formatOdometer(item.dueAtOdometer)}
+                  </span>
+                </div>
+
+                <div className="text-right">
+                  <span className="text-[10px] text-gray-500 block uppercase font-medium">Status</span>
+                  {item.kmRemaining <= 0 ? (
+                    <span className="font-mono font-bold text-red-400">
+                      {Math.abs(item.kmRemaining).toLocaleString()} km overdue
+                    </span>
+                  ) : (
+                    <span className="font-mono font-bold text-gray-300">
+                      in {item.kmRemaining.toLocaleString()} km
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 

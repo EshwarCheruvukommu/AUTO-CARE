@@ -49,10 +49,10 @@ export const Automotive3DBackground: React.FC = () => {
           p.x = Math.random() * width;
         }
 
-        // Draw light streak
+        // Draw light streak in Electric Blue & Cyan
         const gradient = ctx.createLinearGradient(p.x, p.y, p.x, p.y + p.length);
-        gradient.addColorStop(0, `rgba(0, 212, 199, ${p.opacity})`);
-        gradient.addColorStop(1, 'rgba(0, 212, 199, 0)');
+        gradient.addColorStop(0, `rgba(0, 217, 255, ${p.opacity})`);
+        gradient.addColorStop(1, 'rgba(22, 119, 255, 0)');
 
         ctx.strokeStyle = gradient;
         ctx.lineWidth = p.size;
@@ -82,8 +82,8 @@ export const Automotive3DBackground: React.FC = () => {
         className="absolute inset-0 opacity-[0.035]"
         style={{
           backgroundImage: `
-            linear-gradient(to right, #00D4C7 1px, transparent 1px),
-            linear-gradient(to bottom, #00D4C7 1px, transparent 1px)
+            linear-gradient(to right, #00D9FF 1px, transparent 1px),
+            linear-gradient(to bottom, #00D9FF 1px, transparent 1px)
           `,
           backgroundSize: '48px 48px',
           transform: 'perspective(1000px) rotateX(20deg)',
@@ -94,9 +94,9 @@ export const Automotive3DBackground: React.FC = () => {
       {/* Floating Canvas Particles */}
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full opacity-60" />
 
-      {/* Subtle Ambient Glow Cones */}
-      <div className="absolute top-0 right-1/4 w-[500px] h-[500px] bg-[#00D4C7]/5 rounded-full blur-[120px]" />
-      <div className="absolute bottom-1/4 left-10 w-[450px] h-[450px] bg-blue-600/5 rounded-full blur-[140px]" />
+      {/* Subtle Ambient Glow Cones in Electric Blue & Cyan */}
+      <div className="absolute top-0 right-1/4 w-[500px] h-[500px] bg-[#00D9FF]/5 rounded-full blur-[140px]" />
+      <div className="absolute bottom-1/4 left-10 w-[450px] h-[450px] bg-[#1677FF]/5 rounded-full blur-[140px]" />
     </div>
   );
 };

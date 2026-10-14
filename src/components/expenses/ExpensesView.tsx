@@ -33,6 +33,7 @@ import { ConfirmDialog } from '../common/Modal';
 import { SectionVisualHeader } from '../common/SectionVisualHeader';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { exportExpensesToCSV } from '../../utils/exportReport';
+import { ExpenditureTrendChart } from './ExpenditureTrendChart';
 
 const CATEGORY_CONFIG: Record<
   string, 
@@ -150,6 +151,8 @@ export const ExpensesView: React.FC = () => {
   const { 
     selectedVehicle, 
     expenses, 
+    fuelRecords,
+    services,
     loadingExpenses, 
     addExpense, 
     updateExpense, 
@@ -302,7 +305,7 @@ export const ExpensesView: React.FC = () => {
             <button
               onClick={() => exportExpensesToCSV(selectedVehicle, expenses)}
               disabled={expenses.length === 0}
-              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-[#1D232B] hover:bg-[#252C35] border border-[#252C35] text-gray-300 hover:text-white font-semibold text-xs transition-all disabled:opacity-40 cursor-pointer btn-3d"
+              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-[#0F1F35] hover:bg-[#122A46] border border-[#1D3552] text-[#A9B8CC] hover:text-white font-semibold text-xs transition-all disabled:opacity-40 cursor-pointer btn-3d"
               title="Export Expense Records to CSV"
             >
               <span>Export CSV</span>
@@ -310,9 +313,9 @@ export const ExpensesView: React.FC = () => {
 
             <button
               onClick={() => setIsAddOpen(true)}
-              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#20C997] via-emerald-500 to-teal-600 hover:from-[#20C997] hover:to-emerald-400 text-black hover:text-white font-bold text-sm shadow-lg shadow-[#20C997]/20 transition-all cursor-pointer btn-3d"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#1677FF] hover:bg-[#2196FF] text-white font-bold text-sm shadow-lg shadow-[#1677FF]/25 transition-all cursor-pointer btn-3d"
             >
-              <Plus className="w-4 h-4 text-black group-hover:text-white" />
+              <Plus className="w-4 h-4 text-white" />
               <span>Add Expense</span>
             </button>
           </div>
@@ -497,6 +500,13 @@ export const ExpensesView: React.FC = () => {
         </div>
       )}
 
+      {/* Monthly Maintenance & Fuel Expenditure Trends (Recharts) */}
+      <ExpenditureTrendChart
+        expenses={expenses}
+        fuelRecords={fuelRecords}
+        services={services}
+      />
+
       {/* Monthly Breakdown Toggle Widget */}
       {stats.sortedMonths.length > 0 && (
         <div className="rounded-2xl border border-gray-800/80 bg-[#0f131c] overflow-hidden">
@@ -608,22 +618,23 @@ export const ExpensesView: React.FC = () => {
 
       {/* Expense History Content */}
       {loadingExpenses ? (
-        <div className="flex items-center justify-center min-h-[220px]">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-cyan-400"></div>
+        <div className="flex flex-col items-center justify-center min-h-[220px] text-[#A9B8CC] space-y-3">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#00D9FF]" />
+          <span className="text-xs uppercase font-semibold tracking-wider text-[#00D9FF] font-mono">Loading expenses...</span>
         </div>
       ) : filteredExpenses.length === 0 ? (
-        <div className="rounded-2xl border border-gray-800 bg-[#0d1017] p-12 text-center max-w-lg mx-auto">
-          <div className="w-16 h-16 rounded-2xl bg-cyan-950/40 border border-cyan-500/30 flex items-center justify-center mx-auto text-3xl mb-4">
-            💰
+        <div className="rounded-3xl border border-[#1D3552] bg-[#0F1F35] p-12 text-center max-w-lg mx-auto card-3d">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#1677FF]/20 via-[#2196FF]/20 to-[#00D9FF]/20 border border-[#1677FF]/40 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-[#1677FF]/15">
+            <Receipt className="w-8 h-8 text-[#00D9FF]" />
           </div>
-          <h3 className="text-lg font-bold text-white mb-2">
+          <h3 className="text-lg font-bold text-white mb-2 font-mono">
             {searchQuery 
               ? 'No matching expenses found' 
               : selectedFilterCategory === 'all'
-              ? 'No expenses recorded yet'
-              : `No ${selectedFilterCategory} expenses`}
+              ? 'No Expenses Recorded Yet'
+              : `No ${selectedFilterCategory} Expenses`}
           </h3>
-          <p className="text-sm text-gray-400 mb-6 leading-relaxed">
+          <p className="text-sm text-[#A9B8CC] mb-6 leading-relaxed">
             {searchQuery 
               ? `No expense entries matched "${searchQuery}". Try clearing search or selecting another category.`
               : 'Log every fuel fill, regular maintenance, insurance premium, toll, and spare part to get a full view of your vehicle ownership cost.'}
@@ -631,16 +642,16 @@ export const ExpensesView: React.FC = () => {
           {searchQuery ? (
             <button
               onClick={() => { setSearchQuery(''); setSelectedFilterCategory('all'); }}
-              className="px-5 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-white font-semibold text-sm transition-all"
+              className="px-5 py-2.5 rounded-xl bg-[#0B1628] hover:bg-[#122A46] border border-[#1D3552] text-white font-semibold text-sm transition-all cursor-pointer"
             >
               Clear Filters
             </button>
           ) : (
             <button
               onClick={() => setIsAddOpen(true)}
-              className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-semibold text-sm shadow-lg shadow-cyan-500/20 transition-all cursor-pointer"
+              className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#1677FF] to-[#2196FF] hover:from-[#1360D4] hover:to-[#1677FF] text-white font-bold text-sm shadow-lg shadow-[#1677FF]/25 transition-all cursor-pointer btn-3d"
             >
-              Add First Expense
+              + Add First Expense
             </button>
           )}
         </div>

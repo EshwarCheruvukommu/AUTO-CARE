@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useVehicle } from '../../context/VehicleContext';
 import { formatCurrency, formatOdometer, parseLocalDate } from '../../utils/formatters';
+import { ExpenditureTrendChart } from './ExpenditureTrendChart';
 
 export const ExpenseAnalyticsView: React.FC = () => {
   const { selectedVehicle, expenses, fuelRecords, services } = useVehicle();
@@ -191,6 +192,13 @@ export const ExpenseAnalyticsView: React.FC = () => {
           ))}
         </div>
       </div>
+
+      {/* Monthly Maintenance & Fuel Trends Recharts Line Chart */}
+      <ExpenditureTrendChart
+        expenses={expenses}
+        fuelRecords={fuelRecords}
+        services={services}
+      />
 
       {/* Month-over-Month Spending Trend Graph */}
       {monthlyList.length > 0 && (

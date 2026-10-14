@@ -25,6 +25,7 @@ import { Logo } from '../common/Logo';
 import { FeedbackModal } from '../common/FeedbackModal';
 import { FAQModal } from '../common/FAQModal';
 import { FeedbackFloatingButton } from '../common/FeedbackFloatingButton';
+import { FloatingAIAssistant } from '../common/FloatingAIAssistant';
 import { GlobalSearchModal } from '../common/GlobalSearchModal';
 import { Automotive3DBackground } from '../common/Automotive3DBackground';
 import { useAuth } from '../../context/AuthContext';
@@ -108,41 +109,41 @@ export const Layout: React.FC<LayoutProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-[#0B0E14] text-[#F5F7FA] flex flex-col md:flex-row antialiased selection:bg-[#00D4C7] selection:text-black relative">
+    <div className="min-h-screen bg-[#07111F] text-[#F5F9FF] flex flex-col md:flex-row antialiased selection:bg-[#1677FF] selection:text-white relative">
       {/* 3D Animated Automotive Telemetry Background */}
       <Automotive3DBackground />
       
       {/* DESKTOP SIDEBAR */}
-      <aside className="hidden md:flex flex-col w-64 bg-[#10141B] border-r border-[#252C35] sticky top-0 h-screen z-30 select-none backdrop-blur-md">
+      <aside className="hidden md:flex flex-col w-64 bg-[#0B1628] border-r border-[#1D3552] sticky top-0 h-screen z-30 select-none backdrop-blur-md">
         {/* Brand */}
-        <div className="p-5 border-b border-[#252C35]/80">
+        <div className="p-5 border-b border-[#1D3552]">
           <Logo size="md" />
         </div>
 
         {/* Vehicle Quick Switcher */}
-        <div className="p-4 border-b border-[#252C35]/80">
-          <label className="text-[11px] font-semibold tracking-wider uppercase text-gray-400 block mb-1.5 font-mono">
-            Active Telemetry
+        <div className="p-4 border-b border-[#1D3552]">
+          <label className="text-[11px] font-semibold tracking-wider uppercase text-[#A9B8CC] block mb-1.5 font-mono">
+            Active Vehicle
           </label>
           <div className="relative">
             <button
               onClick={() => setVehicleDropdownOpen(!vehicleDropdownOpen)}
-              className="w-full flex items-center justify-between p-2.5 rounded-xl bg-[#151A20] border border-[#252C35] hover:border-[#00D4C7]/50 hover:bg-[#1D232B] transition-all text-left group shadow-sm"
+              className="w-full flex items-center justify-between p-2.5 rounded-xl bg-[#0F1F35] border border-[#1D3552] hover:border-[#1677FF]/50 hover:bg-[#122A46] transition-all text-left group shadow-sm btn-3d"
             >
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-8 h-8 rounded-lg bg-[#00D4C7]/10 border border-[#00D4C7]/30 flex items-center justify-center text-[#00D4C7] shrink-0">
+                <div className="w-8 h-8 rounded-lg bg-[#1677FF]/15 border border-[#1677FF]/30 flex items-center justify-center text-[#00D9FF] shrink-0">
                   <Car className="w-4 h-4" />
                 </div>
                 <div className="truncate">
-                  <div className="text-sm font-semibold text-white truncate group-hover:text-[#00D4C7] transition-colors">
+                  <div className="text-sm font-semibold text-white truncate group-hover:text-[#00D9FF] transition-colors">
                     {selectedVehicle ? selectedVehicle.name : 'No Vehicle'}
                   </div>
-                  <div className="text-xs text-gray-400 flex items-center gap-1.5">
+                  <div className="text-xs text-[#A9B8CC] flex items-center gap-1.5">
                     <span className="truncate">{selectedVehicle ? selectedVehicle.vehicleNumber : 'Add your first'}</span>
                   </div>
                 </div>
               </div>
-              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform shrink-0 ${vehicleDropdownOpen ? 'rotate-180 text-[#00D4C7]' : ''}`} />
+              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform shrink-0 ${vehicleDropdownOpen ? 'rotate-180 text-[#00D9FF]' : ''}`} />
             </button>
 
             {/* Dropdown Menu */}
@@ -152,9 +153,9 @@ export const Layout: React.FC<LayoutProps> = ({
                   className="fixed inset-0 z-40" 
                   onClick={() => setVehicleDropdownOpen(false)}
                 />
-                <div className="absolute left-0 right-0 top-full mt-2 bg-[#121620] border border-cyan-500/30 rounded-xl shadow-2xl py-2 z-50 max-h-60 overflow-y-auto custom-scrollbar animate-in fade-in slide-in-from-top-2 duration-150">
-                  <div className="px-3 py-1 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-                    Select Vehicle
+                <div className="absolute left-0 right-0 top-full mt-2 bg-[#0F1F35] border border-[#1677FF]/40 rounded-xl shadow-2xl py-2 z-50 max-h-60 overflow-y-auto custom-scrollbar animate-in fade-in slide-in-from-top-2 duration-150">
+                  <div className="px-3 py-1 text-[11px] font-semibold text-[#A9B8CC] uppercase tracking-wider font-mono">
+                    Select Fleet Vehicle
                   </div>
                   {vehicles.map((v) => (
                     <button
@@ -163,26 +164,26 @@ export const Layout: React.FC<LayoutProps> = ({
                         setSelectedVehicleId(v.id);
                         setVehicleDropdownOpen(false);
                       }}
-                      className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-gray-800/90 transition-colors ${
-                        selectedVehicle?.id === v.id ? 'bg-cyan-500/10 text-cyan-400 font-semibold' : 'text-gray-300'
+                      className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-[#122A46] transition-colors cursor-pointer ${
+                        selectedVehicle?.id === v.id ? 'bg-[#1677FF]/20 text-[#00D9FF] font-bold' : 'text-gray-300'
                       }`}
                     >
                       <div className="truncate pr-2">
                         <div className="truncate font-medium">{v.name}</div>
-                        <div className="text-[10px] text-gray-500">{v.vehicleNumber} • {formatOdometer(v.currentOdometer)}</div>
+                        <div className="text-[10px] text-[#A9B8CC]">{v.vehicleNumber} • {formatOdometer(v.currentOdometer)}</div>
                       </div>
                       {selectedVehicle?.id === v.id && (
-                        <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 shrink-0" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#00D9FF] shrink-0" />
                       )}
                     </button>
                   ))}
-                  <div className="border-t border-gray-800 my-1 pt-1">
+                  <div className="border-t border-[#1D3552] my-1 pt-1">
                     <button
                       onClick={() => {
                         setVehicleDropdownOpen(false);
                         onOpenAddVehicle();
                       }}
-                      className="w-full text-left px-3 py-2 text-xs text-cyan-400 hover:text-cyan-300 hover:bg-gray-800/60 flex items-center gap-2 font-medium"
+                      className="w-full text-left px-3 py-2 text-xs text-[#00D9FF] hover:text-[#67E8F9] hover:bg-[#122A46] flex items-center gap-2 font-bold cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>+ Add New Vehicle</span>
@@ -203,14 +204,14 @@ export const Layout: React.FC<LayoutProps> = ({
               <button
                 key={item.id}
                 onClick={() => handleNavClick(item.id)}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
                   isActive
-                    ? 'bg-gradient-to-r from-[#00D4C7]/20 via-[#1D232B] to-[#151A20] text-[#00D4C7] border border-[#00D4C7]/40 shadow-lg shadow-[#00D4C7]/10'
-                    : 'text-gray-400 hover:text-[#F5F7FA] hover:bg-[#151A20]'
+                    ? 'bg-gradient-to-r from-[#1677FF]/25 via-[#122A46] to-[#0F1F35] text-[#00D9FF] border border-[#1677FF]/50 shadow-lg shadow-[#1677FF]/15 font-bold'
+                    : 'text-[#A9B8CC] hover:text-[#F5F9FF] hover:bg-[#0F1F35]'
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-[#00D4C7]' : 'text-gray-400'}`} />
+                  <Icon className={`w-4 h-4 ${isActive ? 'text-[#00D9FF]' : 'text-gray-400'}`} />
                   <span>{item.label}</span>
                 </div>
                 {item.badge !== undefined && item.badge > 0 ? (
@@ -218,7 +219,7 @@ export const Layout: React.FC<LayoutProps> = ({
                     {item.badge}
                   </span>
                 ) : item.count !== undefined ? (
-                  <span className="text-xs text-gray-500 px-1.5 py-0.5 rounded bg-[#1D232B] border border-gray-800">
+                  <span className="text-xs text-gray-400 px-1.5 py-0.5 rounded bg-[#0F1F35] border border-[#1D3552]">
                     {item.count}
                   </span>
                 ) : null}
@@ -227,30 +228,30 @@ export const Layout: React.FC<LayoutProps> = ({
           })}
 
           {/* Quick Help & Feedback Divider & Buttons */}
-          <div className="pt-3 mt-2 border-t border-[#252C35]/80 space-y-1">
-            <div className="px-3 pb-1 text-[10px] font-mono font-semibold text-gray-500 uppercase tracking-wider">
+          <div className="pt-3 mt-2 border-t border-[#1D3552] space-y-1">
+            <div className="px-3 pb-1 text-[10px] font-mono font-semibold text-[#A9B8CC] uppercase tracking-wider">
               Help &amp; Diagnostics
             </div>
 
             <button
               onClick={() => setFaqModalOpen(true)}
-              className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-semibold text-gray-400 hover:text-[#00D4C7] hover:bg-[#151A20] transition-all cursor-pointer group"
+              className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-semibold text-[#A9B8CC] hover:text-[#00D9FF] hover:bg-[#0F1F35] transition-all cursor-pointer group"
             >
               <div className="flex items-center gap-3">
-                <HelpCircle className="w-4 h-4 text-[#00D4C7]/80 group-hover:text-[#00D4C7]" />
+                <HelpCircle className="w-4 h-4 text-[#1677FF] group-hover:text-[#00D9FF]" />
                 <span>FAQ &amp; Help Guide</span>
               </div>
             </button>
 
             <button
               onClick={() => setFeedbackModalOpen(true)}
-              className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-semibold text-gray-400 hover:text-[#00D4C7] hover:bg-[#151A20] transition-all cursor-pointer group"
+              className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-semibold text-[#A9B8CC] hover:text-[#00D9FF] hover:bg-[#0F1F35] transition-all cursor-pointer group"
             >
               <div className="flex items-center gap-3">
-                <MessageSquareHeart className="w-4 h-4 text-[#00D4C7] group-hover:scale-110 transition-transform" />
+                <span className="text-sm">💬</span>
                 <span>Feedback</span>
               </div>
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#00D4C7]/10 text-[#00D4C7] font-semibold border border-[#00D4C7]/30">
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1677FF]/20 text-[#00D9FF] font-bold border border-[#1677FF]/35">
                 Share
               </span>
             </button>
@@ -258,21 +259,21 @@ export const Layout: React.FC<LayoutProps> = ({
         </nav>
 
         {/* User Profile & Logout Bottom Section */}
-        <div className="p-3 border-t border-[#252C35] bg-[#0E121A]">
-          <div className="flex items-center justify-between p-2 rounded-xl bg-[#151A20] border border-[#252C35]">
+        <div className="p-3 border-t border-[#1D3552] bg-[#07111F]">
+          <div className="flex items-center justify-between p-2 rounded-xl bg-[#0F1F35] border border-[#1D3552]">
             <div 
               onClick={() => handleNavClick('profile')}
               className="flex items-center gap-2.5 min-w-0 cursor-pointer hover:opacity-85 transition-opacity flex-1"
               title="View Profile & Settings"
             >
-              <div className="w-8 h-8 rounded-lg bg-blue-600/20 text-blue-400 flex items-center justify-center font-bold text-xs border border-blue-500/30 shrink-0 uppercase">
+              <div className="w-8 h-8 rounded-lg bg-[#1677FF]/20 text-[#00D9FF] flex items-center justify-center font-bold text-xs border border-[#1677FF]/35 shrink-0 uppercase">
                 {userProfile?.name?.charAt(0) || currentUser?.email?.charAt(0) || 'U'}
               </div>
               <div className="truncate">
                 <div className="text-xs font-semibold text-white truncate">
                   {userProfile?.name || 'Owner'}
                 </div>
-                <div className="text-[10px] text-gray-400 truncate">
+                <div className="text-[10px] text-[#A9B8CC] truncate">
                   {currentUser?.email}
                 </div>
               </div>
@@ -289,19 +290,19 @@ export const Layout: React.FC<LayoutProps> = ({
       </aside>
 
       {/* MOBILE TOP BAR */}
-      <header className="md:hidden flex items-center justify-between p-4 bg-[#0d1017] border-b border-gray-800 sticky top-0 z-30">
+      <header className="md:hidden flex items-center justify-between p-4 bg-[#0B1628] border-b border-[#1D3552] sticky top-0 z-30">
         <Logo size="sm" />
         <div className="flex items-center gap-2">
           {/* Mobile In-App Notification Bell */}
           <div className="relative">
             <button
               onClick={() => setNotificationDropdownOpen(!notificationDropdownOpen)}
-              className="p-2 rounded-lg bg-gray-800/80 text-gray-300 hover:text-white relative cursor-pointer"
+              className="p-2 rounded-lg bg-[#122A46] text-gray-300 hover:text-white relative cursor-pointer"
               title="Notifications"
             >
               <Bell className="w-5 h-5 text-gray-300" />
               {notificationsEnabled && activeAlertCount > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1 ring-2 ring-[#0d1017] animate-pulse">
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-[#EF4444] text-white text-[10px] font-bold flex items-center justify-center px-1 ring-2 ring-[#0B1628] animate-pulse">
                   {activeAlertCount}
                 </span>
               )}
@@ -311,15 +312,15 @@ export const Layout: React.FC<LayoutProps> = ({
           {selectedVehicle && (
             <button
               onClick={() => handleNavClick('vehicles')}
-              className="text-xs px-2.5 py-1.5 rounded-lg bg-cyan-950/60 border border-cyan-500/30 text-cyan-400 flex items-center gap-1.5"
+              className="text-xs px-2.5 py-1.5 rounded-lg bg-[#1677FF]/15 border border-[#1677FF]/35 text-[#00D9FF] flex items-center gap-1.5 font-bold"
             >
-              <Car className="w-3.5 h-3.5" />
-              <span className="font-semibold truncate max-w-[100px]">{selectedVehicle.name}</span>
+              <Car className="w-3.5 h-3.5 text-[#00D9FF]" />
+              <span className="truncate max-w-[100px]">{selectedVehicle.name}</span>
             </button>
           )}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 rounded-lg bg-gray-800 text-gray-300 hover:text-white"
+            className="p-2 rounded-lg bg-[#122A46] text-gray-300 hover:text-white"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -328,11 +329,11 @@ export const Layout: React.FC<LayoutProps> = ({
 
       {/* MOBILE FULL DRAWER NAVIGATION */}
       {mobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 top-[65px] bg-[#090b10] z-40 p-4 overflow-y-auto flex flex-col justify-between">
+        <div className="md:hidden fixed inset-0 top-[65px] bg-[#07111F] z-40 p-4 overflow-y-auto flex flex-col justify-between">
           <div className="space-y-4">
             {/* Quick Vehicle Switcher on Mobile */}
-            <div className="p-3 bg-gray-900 rounded-xl border border-gray-800">
-              <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+            <div className="p-3 bg-[#0B1628] rounded-xl border border-[#1D3552]">
+              <div className="text-xs font-semibold text-[#A9B8CC] uppercase tracking-wider mb-2 font-mono">
                 Active Vehicle
               </div>
               <select
@@ -340,7 +341,7 @@ export const Layout: React.FC<LayoutProps> = ({
                 onChange={(e) => {
                   setSelectedVehicleId(e.target.value);
                 }}
-                className="w-full bg-[#121620] border border-cyan-500/30 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-cyan-400"
+                className="w-full bg-[#0F1F35] border border-[#1677FF]/40 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#00D9FF]"
               >
                 {vehicles.map((v) => (
                   <option key={v.id} value={v.id}>
@@ -358,14 +359,14 @@ export const Layout: React.FC<LayoutProps> = ({
                   <button
                     key={item.id}
                     onClick={() => handleNavClick(item.id)}
-                    className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-base font-medium transition-all ${
+                    className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-base font-semibold transition-all ${
                       isActive
-                        ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
-                        : 'text-gray-400 hover:bg-gray-900'
+                        ? 'bg-[#1677FF]/25 text-[#00D9FF] border border-[#1677FF]/40'
+                        : 'text-[#A9B8CC] hover:bg-[#0F1F35]'
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <Icon className="w-5 h-5" />
+                      <Icon className={`w-5 h-5 ${isActive ? 'text-[#00D9FF]' : 'text-gray-400'}`} />
                       <span>{item.label}</span>
                     </div>
                     {item.badge !== undefined && item.badge > 0 ? (
@@ -377,16 +378,16 @@ export const Layout: React.FC<LayoutProps> = ({
                 );
               })}
 
-              <div className="pt-2 border-t border-gray-800 space-y-1">
+              <div className="pt-2 border-t border-[#1D3552] space-y-1">
                 <button
                   onClick={() => {
                     setMobileMenuOpen(false);
                     setFaqModalOpen(true);
                   }}
-                  className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-900 transition-all"
+                  className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium text-gray-400 hover:text-white hover:bg-[#0F1F35] transition-all"
                 >
                   <div className="flex items-center gap-3">
-                    <HelpCircle className="w-5 h-5 text-cyan-400" />
+                    <HelpCircle className="w-5 h-5 text-[#1677FF]" />
                     <span>FAQ &amp; Help Guide</span>
                   </div>
                 </button>
@@ -396,13 +397,13 @@ export const Layout: React.FC<LayoutProps> = ({
                     setMobileMenuOpen(false);
                     setFeedbackModalOpen(true);
                   }}
-                  className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium text-pink-400 hover:text-pink-300 hover:bg-pink-500/10 transition-all"
+                  className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium text-gray-400 hover:text-white hover:bg-[#0F1F35] transition-all"
                 >
                   <div className="flex items-center gap-3">
-                    <MessageSquareHeart className="w-5 h-5 text-pink-400" />
+                    <span>💬</span>
                     <span>Feedback Form</span>
                   </div>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 font-bold">
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#1677FF]/20 text-[#00D9FF] font-bold">
                     Share
                   </span>
                 </button>
@@ -410,7 +411,7 @@ export const Layout: React.FC<LayoutProps> = ({
             </nav>
           </div>
 
-          <div className="pt-6 border-t border-gray-800">
+          <div className="pt-6 border-t border-[#1D3552]">
             <button
               onClick={() => logout()}
               className="w-full py-3 px-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center gap-2 font-medium"
@@ -426,24 +427,24 @@ export const Layout: React.FC<LayoutProps> = ({
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto relative z-10">
         {/* Top contextual bar for quick glance */}
         {selectedVehicle && (
-          <div className="bg-[#10141B]/90 backdrop-blur-md border-b border-[#252C35] px-6 py-2.5 flex items-center justify-between text-xs text-gray-400">
+          <div className="bg-[#0B1628]/95 backdrop-blur-md border-b border-[#1D3552] px-6 py-2.5 flex items-center justify-between text-xs text-[#A9B8CC]">
             <div className="flex items-center gap-4 flex-wrap">
               <span className="flex items-center gap-1.5 text-gray-300">
-                <Car className="w-3.5 h-3.5 text-[#00D4C7]" />
+                <Car className="w-3.5 h-3.5 text-[#00D9FF]" />
                 <span className="font-semibold text-white">{selectedVehicle.brand} {selectedVehicle.model}</span>
-                {selectedVehicle.variant && <span className="text-gray-400">({selectedVehicle.variant})</span>}
+                {selectedVehicle.variant && <span className="text-[#A9B8CC]">({selectedVehicle.variant})</span>}
               </span>
-              <span className="text-gray-700">|</span>
-              <span className="flex items-center gap-1.5 font-mono text-[#00D4C7] bg-[#151A20] px-2.5 py-0.5 rounded border border-[#00D4C7]/30">
+              <span className="text-[#1D3552]">|</span>
+              <span className="flex items-center gap-1.5 font-mono text-white font-extrabold bg-[#1677FF] px-2.5 py-0.5 rounded shadow-sm">
                 {selectedVehicle.vehicleNumber}
               </span>
-              <span className="text-gray-700">|</span>
+              <span className="text-[#1D3552]">|</span>
               <span className="flex items-center gap-1.5">
-                <Gauge className="w-3.5 h-3.5 text-emerald-400" />
-                <span>{formatOdometer(selectedVehicle.currentOdometer)}</span>
+                <Gauge className="w-3.5 h-3.5 text-[#22C55E]" />
+                <span className="text-white font-mono">{formatOdometer(selectedVehicle.currentOdometer)}</span>
               </span>
-              <span className="text-gray-700">|</span>
-              <span className="px-2 py-0.5 rounded bg-[#1D232B] text-gray-300 text-[11px] border border-gray-800">
+              <span className="text-[#1D3552]">|</span>
+              <span className="px-2 py-0.5 rounded bg-[#0F1F35] text-gray-300 text-[11px] border border-[#1D3552]">
                 {selectedVehicle.fuelType}
               </span>
             </div>
@@ -453,7 +454,7 @@ export const Layout: React.FC<LayoutProps> = ({
                 type="button"
                 onClick={toggleTheme}
                 aria-label={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} mode`}
-                className="px-2.5 py-1 rounded-xl bg-gray-900 hover:bg-gray-800 border border-gray-800 hover:border-gray-700 text-xs font-bold text-gray-300 hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer"
+                className="px-2.5 py-1 rounded-xl bg-[#122A46] hover:bg-[#1D3552] border border-[#1D3552] text-xs font-bold text-gray-300 hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer"
                 title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
               >
                 {theme === 'dark' ? (
@@ -473,12 +474,12 @@ export const Layout: React.FC<LayoutProps> = ({
               <div className="relative">
                 <button
                   onClick={() => setNotificationDropdownOpen(!notificationDropdownOpen)}
-                  className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors relative cursor-pointer flex items-center gap-1.5"
+                  className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-[#122A46] transition-colors relative cursor-pointer flex items-center gap-1.5"
                   title="In-App Notifications"
                 >
-                  <Bell className="w-4 h-4 text-cyan-400" />
+                  <Bell className="w-4 h-4 text-[#00D9FF]" />
                   {notificationsEnabled && activeAlertCount > 0 && (
-                    <span className="min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1 animate-pulse">
+                    <span className="min-w-[18px] h-[18px] rounded-full bg-[#EF4444] text-white text-[10px] font-bold flex items-center justify-center px-1 animate-pulse">
                       {activeAlertCount}
                     </span>
                   )}
@@ -487,7 +488,7 @@ export const Layout: React.FC<LayoutProps> = ({
 
               <button
                 onClick={() => setCurrentTab('vehicles')}
-                className="text-cyan-400 hover:text-cyan-300 hover:underline cursor-pointer hidden sm:block"
+                className="text-[#00D9FF] hover:text-[#67E8F9] hover:underline cursor-pointer hidden sm:block font-semibold"
               >
                 Manage Vehicle →
               </button>
@@ -502,22 +503,22 @@ export const Layout: React.FC<LayoutProps> = ({
               className="fixed inset-0 z-40" 
               onClick={() => setNotificationDropdownOpen(false)} 
             />
-            <div className="fixed sm:absolute right-4 top-14 sm:top-12 w-80 sm:w-96 bg-[#121620] border border-cyan-500/30 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
-              <div className="p-3.5 border-b border-gray-800 flex items-center justify-between bg-[#0f131c]">
+            <div className="fixed sm:absolute right-4 top-14 sm:top-12 w-80 sm:w-96 bg-[#0F1F35] border border-[#1677FF]/40 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
+              <div className="p-3.5 border-b border-[#1D3552] flex items-center justify-between bg-[#0B1628]">
                 <div className="flex items-center gap-2">
-                  <Bell className="w-4 h-4 text-cyan-400" />
-                  <span className="text-xs font-bold text-white uppercase tracking-wider">
-                    Alerts & Deadlines
+                  <Bell className="w-4 h-4 text-[#00D9FF]" />
+                  <span className="text-xs font-bold text-white uppercase tracking-wider font-mono">
+                    Alerts &amp; Deadlines
                   </span>
                 </div>
-                <span className="text-[11px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 font-semibold font-mono">
+                <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#1677FF]/15 text-[#00D9FF] border border-[#1677FF]/35 font-semibold font-mono">
                   {activeAlertCount} active
                 </span>
               </div>
 
-              <div className="max-h-72 overflow-y-auto divide-y divide-gray-800/60 custom-scrollbar">
+              <div className="max-h-72 overflow-y-auto divide-y divide-[#1D3552] custom-scrollbar">
                 {reminders.length === 0 ? (
-                  <div className="p-6 text-center text-xs text-gray-400">
+                  <div className="p-6 text-center text-xs text-[#A9B8CC]">
                     🛡️ You're all caught up! No overdue or urgent reminders for this vehicle.
                   </div>
                 ) : (
@@ -529,27 +530,27 @@ export const Layout: React.FC<LayoutProps> = ({
                         if (item.actionUrl === '/documents') setCurrentTab('documents');
                         else setCurrentTab('reminders');
                       }}
-                      className="p-3 hover:bg-gray-800/60 transition-colors cursor-pointer flex items-start gap-2.5"
+                      className="p-3 hover:bg-[#122A46] transition-colors cursor-pointer flex items-start gap-2.5"
                     >
                       <span className="text-xs mt-0.5 shrink-0">
                         {item.type === 'danger' ? '🔴' : '🟡'}
                       </span>
                       <div className="min-w-0 flex-1">
                         <div className="text-xs font-bold text-white truncate">{item.title}</div>
-                        <div className="text-[11px] text-gray-400 mt-0.5 line-clamp-2">{item.message}</div>
+                        <div className="text-[11px] text-[#A9B8CC] mt-0.5 line-clamp-2">{item.message}</div>
                       </div>
                     </div>
                   ))
                 )}
               </div>
 
-              <div className="p-2.5 bg-gray-950/80 border-t border-gray-800 text-center">
+              <div className="p-2.5 bg-[#07111F] border-t border-[#1D3552] text-center">
                 <button
                   onClick={() => {
                     setNotificationDropdownOpen(false);
                     setCurrentTab('reminders');
                   }}
-                  className="text-xs font-semibold text-cyan-400 hover:text-cyan-300 py-1 cursor-pointer"
+                  className="text-xs font-semibold text-[#00D9FF] hover:text-[#67E8F9] py-1 cursor-pointer"
                 >
                   View All Reminders →
                 </button>
@@ -564,6 +565,12 @@ export const Layout: React.FC<LayoutProps> = ({
           </div>
         </div>
       </main>
+
+      {/* Global Persistent Floating AI Assistant Avatar (Directly Above Feedback) */}
+      <FloatingAIAssistant 
+        onClick={() => setCurrentTab('ai-assistant')} 
+        isActive={currentTab === 'ai-assistant'}
+      />
 
       {/* Global Persistent Floating Feedback Button (Bottom-Right) */}
       <FeedbackFloatingButton onClick={() => setFeedbackModalOpen(true)} />

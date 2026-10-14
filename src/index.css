@@ -1,45 +1,49 @@
 @import "tailwindcss";
 
 /* ---------------------------------------------------- */
-/* METALLIC NIGHT Automotive Color & Depth System       */
+/* DARK BLUE + CYAN Automotive Technology Color System   */
 /* ---------------------------------------------------- */
 :root {
-  --bg-page: #0B0E14;
-  --bg-sidebar: #10141B;
-  --surface-primary: #151A20;
-  --surface-secondary: #1D232B;
-  --surface-elevated: #252C35;
-  --accent-teal: #00D4C7;
-  --accent-titanium: #B8C2CC;
-  --text-highlight: #F5F7FA;
-  --text-muted: #8E9BA8;
-  --status-amber: #FFB020;
-  --status-red: #FF4D4F;
-  --status-emerald: #20C997;
-  --border-metallic: rgba(184, 194, 204, 0.12);
-  --border-glow: rgba(0, 212, 199, 0.3);
+  --bg-page: #07111F;             /* Deep Space Navy */
+  --bg-secondary: #0B1628;        /* Dark Navy */
+  --surface-primary: #0F1F35;     /* Midnight Blue Card */
+  --surface-elevated: #122A46;    /* Elevated Deep Blue */
+  --accent-primary: #1677FF;      /* Electric Blue */
+  --accent-secondary: #2196FF;    /* Bright Blue */
+  --accent-cyan: #00D9FF;         /* Cyan Highlight */
+  --accent-soft-cyan: #67E8F9;    /* Soft Cyan */
+  --text-primary: #F5F9FF;        /* Primary Text */
+  --text-secondary: #A9B8CC;      /* Secondary Text */
+  --text-muted: #71839A;          /* Muted Text */
+  --border-subtle: #1D3552;       /* Border */
+  --status-emerald: #22C55E;      /* Success */
+  --status-amber: #F59E0B;        /* Warning */
+  --status-danger: #EF4444;       /* Danger */
+  --border-glow: rgba(0, 217, 255, 0.25);
 }
 
 html.light {
-  --bg-page: #F4F6F9;
-  --bg-sidebar: #FFFFFF;
+  --bg-page: #F4F7FC;
+  --bg-secondary: #FFFFFF;
   --surface-primary: #FFFFFF;
-  --surface-secondary: #EBF0F5;
-  --surface-elevated: #DFE5EC;
-  --accent-teal: #00AFA4;
-  --accent-titanium: #64748B;
-  --text-highlight: #121820;
-  --text-muted: #4B5563;
+  --surface-elevated: #EDF3FA;
+  --accent-primary: #1677FF;
+  --accent-secondary: #2196FF;
+  --accent-cyan: #00A6CC;
+  --accent-soft-cyan: #0284C7;
+  --text-primary: #0B1628;
+  --text-secondary: #475569;
+  --text-muted: #64748B;
+  --border-subtle: #D8E2EE;
+  --status-emerald: #16A34A;
   --status-amber: #D97706;
-  --status-red: #DC2626;
-  --status-emerald: #059669;
-  --border-metallic: rgba(15, 23, 42, 0.1);
-  --border-glow: rgba(0, 175, 164, 0.3);
+  --status-danger: #DC2626;
+  --border-glow: rgba(22, 119, 255, 0.2);
 }
 
 body {
   background-color: var(--bg-page);
-  color: var(--text-highlight);
+  color: var(--text-primary);
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   overflow-x: hidden;
   transition: background-color 0.25s ease, color 0.25s ease;
@@ -47,43 +51,40 @@ body {
 
 /* Light Theme Element Overrides */
 html.light body {
-  background-color: #F4F6F9;
-  color: #121820;
+  background-color: #F4F7FC;
+  color: #0B1628;
 }
 
 html.light main {
-  background-color: #F4F6F9;
+  background-color: #F4F7FC;
 }
 
-html.light .bg-\[\#07090e\],
-html.light .bg-\[\#090b10\],
-html.light .bg-\[\#0a0d14\],
-html.light .bg-\[\#0b0e14\],
-html.light .bg-\[\#0b0e17\],
-html.light .bg-\[\#0c1018\],
-html.light .bg-\[\#0d1017\],
-html.light .bg-\[\#0f131c\],
-html.light .bg-\[\#0f1420\],
-html.light .bg-\[\#0f1422\],
-html.light .bg-\[\#121622\],
-html.light .bg-\[\#121624\],
-html.light .bg-\[\#141926\],
-html.light .bg-\[\#151A20\],
-html.light .bg-\[\#1D232B\] {
+html.light .bg-\[\#07111F\],
+html.light .bg-\[\#07111f\],
+html.light .bg-\[\#0B1628\],
+html.light .bg-\[\#0b1628\],
+html.light .bg-\[\#0F1F35\],
+html.light .bg-\[\#0f1f35\],
+html.light .bg-\[\#0B0B0B\],
+html.light .bg-\[\#151515\],
+html.light .bg-\[\#1E1E1E\] {
   background-color: #FFFFFF !important;
-  color: #121820 !important;
+  color: #0B1628 !important;
 }
 
+html.light .bg-\[\#122A46\],
+html.light .bg-\[\#122a46\],
+html.light .bg-\[\#262626\],
 html.light .bg-gray-900,
 html.light .bg-gray-900\/60,
 html.light .bg-gray-900\/80,
 html.light .bg-gray-900\/90,
 html.light .bg-gray-950 {
-  background-color: #EBF0F5 !important;
+  background-color: #EDF3FA !important;
 }
 
 html.light .text-white {
-  color: #121820 !important;
+  color: #0B1628 !important;
 }
 
 html.light .text-gray-100,
@@ -93,17 +94,21 @@ html.light .text-gray-300 {
 }
 
 html.light .text-gray-400,
-html.light .text-gray-500 {
-  color: #475569 !important;
+html.light .text-gray-500,
+html.light .text-\[\#A9B8CC\],
+html.light .text-\[\#B7B7B7\] {
+  color: #64748B !important;
 }
 
+html.light .border-\[\#1D3552\],
+html.light .border-\[\#333333\],
 html.light .border-gray-800,
 html.light .border-gray-800\/60,
 html.light .border-gray-800\/80,
 html.light .border-gray-800\/90,
 html.light .border-gray-700,
 html.light .border-gray-700\/80 {
-  border-color: #CBD5E1 !important;
+  border-color: #D8E2EE !important;
 }
 
 /* Custom Scrollbar */
@@ -113,7 +118,7 @@ html.light .border-gray-700\/80 {
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: #0E121A;
+  background: #07111F;
 }
 
 html.light .custom-scrollbar::-webkit-scrollbar-track {
@@ -121,7 +126,7 @@ html.light .custom-scrollbar::-webkit-scrollbar-track {
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #252C35;
+  background: #1D3552;
   border-radius: 9999px;
 }
 
@@ -130,7 +135,7 @@ html.light .custom-scrollbar::-webkit-scrollbar-thumb {
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #36414E;
+  background: #1677FF;
 }
 
 /* ---------------------------------------------------- */
@@ -145,12 +150,12 @@ html.light .custom-scrollbar::-webkit-scrollbar-thumb {
   }
 }
 
-@keyframes pulseTealGlow {
+@keyframes pulseCyanGlow {
   0%, 100% {
-    box-shadow: 0 0 25px rgba(0, 212, 199, 0.25), 0 0 50px rgba(0, 212, 199, 0.1);
+    box-shadow: 0 0 25px rgba(0, 217, 255, 0.2), 0 0 50px rgba(22, 119, 255, 0.1);
   }
   50% {
-    box-shadow: 0 0 45px rgba(0, 212, 199, 0.5), 0 0 80px rgba(0, 212, 199, 0.2);
+    box-shadow: 0 0 40px rgba(0, 217, 255, 0.4), 0 0 70px rgba(22, 119, 255, 0.25);
   }
 }
 
@@ -176,16 +181,19 @@ html.light .custom-scrollbar::-webkit-scrollbar-thumb {
   }
 }
 
-@keyframes telemetryScan {
+@keyframes lightSweep {
   0% {
-    transform: translateY(-100%);
+    transform: translateX(-100%) skewX(-20deg);
     opacity: 0;
   }
-  50% {
-    opacity: 0.6;
+  30% {
+    opacity: 0.25;
+  }
+  60% {
+    opacity: 0.25;
   }
   100% {
-    transform: translateY(100%);
+    transform: translateX(200%) skewX(-20deg);
     opacity: 0;
   }
 }
@@ -203,11 +211,29 @@ html.light .custom-scrollbar::-webkit-scrollbar-thumb {
 }
 
 .glow-orb-3d {
-  animation: pulseTealGlow 4s ease-in-out infinite;
+  animation: pulseCyanGlow 4s ease-in-out infinite;
+}
+
+.light-sweep-effect {
+  position: relative;
+  overflow: hidden;
+}
+
+.light-sweep-effect::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(0, 217, 255, 0.15), rgba(255, 255, 255, 0.25), transparent);
+  transform: translateX(-100%) skewX(-20deg);
+  animation: lightSweep 6s infinite ease-in-out;
+  pointer-events: none;
 }
 
 /* ---------------------------------------------------- */
-/* 3D Utility Classes & Metallic Depth                  */
+/* 3D Utility Classes & Deep Navy Depth                 */
 /* ---------------------------------------------------- */
 .card-3d {
   perspective: 1000px;
@@ -216,24 +242,12 @@ html.light .custom-scrollbar::-webkit-scrollbar-thumb {
 }
 
 .card-3d:hover {
-  transform: translateY(-5px) perspective(1000px) rotateX(1.5deg);
-  box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.7), 0 0 25px -5px rgba(0, 212, 199, 0.25);
+  transform: translateY(-4px) perspective(1000px) rotateX(1deg);
+  box-shadow: 0 16px 32px -8px rgba(3, 8, 16, 0.7), 0 0 20px -4px rgba(0, 217, 255, 0.2);
 }
 
 html.light .card-3d:hover {
-  box-shadow: 0 16px 25px -8px rgba(15, 23, 42, 0.1), 0 0 20px -3px rgba(0, 175, 164, 0.2);
-}
-
-.metallic-surface {
-  background: linear-gradient(135deg, rgba(29, 35, 43, 0.95) 0%, rgba(21, 26, 32, 0.98) 100%);
-  border: 1px solid rgba(184, 194, 204, 0.12);
-  backdrop-filter: blur(12px);
-}
-
-.metallic-surface-elevated {
-  background: linear-gradient(135deg, rgba(37, 44, 53, 0.95) 0%, rgba(29, 35, 43, 0.98) 100%);
-  border: 1px solid rgba(0, 212, 199, 0.25);
-  box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  box-shadow: 0 14px 24px -8px rgba(11, 22, 40, 0.08), 0 0 16px -3px rgba(22, 119, 255, 0.15);
 }
 
 .btn-3d {
@@ -243,7 +257,7 @@ html.light .card-3d:hover {
 
 .btn-3d:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px -4px rgba(0, 212, 199, 0.4);
+  box-shadow: 0 8px 18px -4px rgba(22, 119, 255, 0.45);
 }
 
 .btn-3d:active {
@@ -253,8 +267,8 @@ html.light .card-3d:hover {
 /* Automotive Telemetry Lines */
 .telemetry-grid {
   background-image: 
-    linear-gradient(to right, rgba(0, 212, 199, 0.04) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(0, 212, 199, 0.04) 1px, transparent 1px);
+    linear-gradient(to right, rgba(0, 217, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 217, 255, 0.04) 1px, transparent 1px);
   background-size: 32px 32px;
 }
 

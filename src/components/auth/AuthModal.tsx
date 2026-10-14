@@ -107,18 +107,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in">
       <div className="fixed inset-0" onClick={onClose} />
-      <div className="relative w-full max-w-md bg-[#121620] border border-cyan-500/30 rounded-3xl shadow-2xl p-6 sm:p-8 z-10 overflow-hidden">
+      <div className="relative w-full max-w-md bg-[#0F1F35] border border-[#1D3552] rounded-3xl shadow-2xl p-6 sm:p-8 z-10 overflow-hidden">
         {/* Ambient glow */}
-        <div className="absolute -top-20 -right-20 w-44 h-44 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -top-20 -right-20 w-44 h-44 bg-[#1677FF]/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-20 -left-20 w-44 h-44 bg-[#00D9FF]/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="flex flex-col items-center text-center mb-6">
-          <Logo size="md" />
-          <h2 className="text-xl font-bold text-white mt-4">
+          <Logo size="lg" />
+          <h2 className="text-xl font-bold text-white mt-4 font-mono">
             {mode === 'login' && 'Welcome Back'}
             {mode === 'signup' && 'Create Your AutoCare Account'}
             {mode === 'forgot' && 'Reset Password'}
           </h2>
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-xs text-[#A9B8CC] mt-1">
             {mode === 'login' && 'Sign in to access your vehicles and maintenance history'}
             {mode === 'signup' && 'Start managing documents, services, and expenses'}
             {mode === 'forgot' && 'Enter your email to receive a password reset link'}
@@ -142,36 +143,36 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         <form onSubmit={handleSubmit} className="space-y-3.5">
           {mode === 'signup' && (
             <div>
-              <label className="block text-[11px] font-semibold text-gray-300 uppercase tracking-wider mb-1">
+              <label className="block text-[11px] font-semibold text-[#A9B8CC] uppercase tracking-wider mb-1">
                 Full Name
               </label>
               <div className="relative">
-                <User className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
+                <User className="w-4 h-4 text-[#71839A] absolute left-3.5 top-3" />
                 <input
                   type="text"
                   placeholder="e.g. Ramesh Kumar"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
-                  className="w-full bg-[#0a0d14] border border-gray-700 focus:border-cyan-400 rounded-xl pl-10 pr-3.5 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none transition-colors"
+                  className="w-full bg-[#07111F] border border-[#1D3552] focus:border-[#00D9FF] rounded-xl pl-10 pr-3.5 py-2.5 text-sm text-white placeholder-[#71839A] focus:outline-none transition-colors"
                 />
               </div>
             </div>
           )}
 
           <div>
-            <label className="block text-[11px] font-semibold text-gray-300 uppercase tracking-wider mb-1">
+            <label className="block text-[11px] font-semibold text-[#A9B8CC] uppercase tracking-wider mb-1">
               Email Address
             </label>
             <div className="relative">
-              <Mail className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
+              <Mail className="w-4 h-4 text-[#71839A] absolute left-3.5 top-3" />
               <input
                 type="email"
                 placeholder="name@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full bg-[#0a0d14] border border-gray-700 focus:border-cyan-400 rounded-xl pl-10 pr-3.5 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none transition-colors"
+                className="w-full bg-[#07111F] border border-[#1D3552] focus:border-[#00D9FF] rounded-xl pl-10 pr-3.5 py-2.5 text-sm text-white placeholder-[#71839A] focus:outline-none transition-colors"
               />
             </div>
           </div>
@@ -179,7 +180,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           {mode !== 'forgot' && (
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="block text-[11px] font-semibold text-gray-300 uppercase tracking-wider">
+                <label className="block text-[11px] font-semibold text-[#A9B8CC] uppercase tracking-wider">
                   Password
                 </label>
                 {mode === 'login' && (
@@ -189,21 +190,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       setMode('forgot');
                       setError('');
                     }}
-                    className="text-[11px] text-cyan-400 hover:text-cyan-300 cursor-pointer"
+                    className="text-[11px] text-[#00D9FF] hover:text-[#67E8F9] cursor-pointer"
                   >
                     Forgot Password?
                   </button>
                 )}
               </div>
               <div className="relative">
-                <Lock className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
+                <Lock className="w-4 h-4 text-[#71839A] absolute left-3.5 top-3" />
                 <input
                   type="password"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full bg-[#0a0d14] border border-gray-700 focus:border-cyan-400 rounded-xl pl-10 pr-3.5 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none transition-colors"
+                  className="w-full bg-[#07111F] border border-[#1D3552] focus:border-[#00D9FF] rounded-xl pl-10 pr-3.5 py-2.5 text-sm text-white placeholder-[#71839A] focus:outline-none transition-colors"
                 />
               </div>
             </div>
@@ -211,18 +212,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
           {mode === 'signup' && (
             <div>
-              <label className="block text-[11px] font-semibold text-gray-300 uppercase tracking-wider mb-1">
+              <label className="block text-[11px] font-semibold text-[#A9B8CC] uppercase tracking-wider mb-1">
                 Confirm Password
               </label>
               <div className="relative">
-                <Lock className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
+                <Lock className="w-4 h-4 text-[#71839A] absolute left-3.5 top-3" />
                 <input
                   type="password"
                   placeholder="••••••••"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
-                  className="w-full bg-[#0a0d14] border border-gray-700 focus:border-cyan-400 rounded-xl pl-10 pr-3.5 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none transition-colors"
+                  className="w-full bg-[#07111F] border border-[#1D3552] focus:border-[#00D9FF] rounded-xl pl-10 pr-3.5 py-2.5 text-sm text-white placeholder-[#71839A] focus:outline-none transition-colors"
                 />
               </div>
             </div>
@@ -232,7 +233,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-sm shadow-lg shadow-cyan-500/25 transition-all cursor-pointer flex items-center justify-center gap-2"
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-[#1677FF] to-[#2196FF] hover:from-[#1360D4] hover:to-[#1677FF] text-white font-bold text-sm shadow-lg shadow-[#1677FF]/25 transition-all cursor-pointer flex items-center justify-center gap-2"
             >
               {isSubmitting ? (
                 <span>Please wait...</span>

@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { 
   Bell, 
+  BellRing,
   Plus, 
   CheckCircle, 
   Clock, 
@@ -138,14 +139,14 @@ export const RemindersView: React.FC<RemindersViewProps> = ({ onNavigateTab }) =
       <SectionVisualHeader
         sectionId="reminders"
         customTitle="Preventative Reminders & Deadlines"
-        customTagline="Prioritized telemetry alerts (Overdue, Due Soon, Scheduled) with automatic duplicate prevention."
+        customTagline="Prioritized maintenance alerts (Overdue, Due Soon, Scheduled) with automatic duplicate prevention."
         activeVehicleInfo={`${selectedVehicle.name} • ${selectedVehicle.vehicleNumber}`}
         rightAction={
           <button
             onClick={() => setIsAddOpen(true)}
-            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#FFB020] via-amber-500 to-orange-500 hover:from-[#FFB020] hover:to-amber-400 text-black font-bold text-sm shadow-lg shadow-[#FFB020]/20 transition-all cursor-pointer btn-3d"
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#1677FF] hover:bg-[#2196FF] text-white font-bold text-sm shadow-lg shadow-[#1677FF]/25 transition-all cursor-pointer btn-3d"
           >
-            <Plus className="w-4 h-4 text-black" />
+            <Plus className="w-4 h-4 text-white" />
             <span>Add Reminder</span>
           </button>
         }
@@ -345,23 +346,24 @@ export const RemindersView: React.FC<RemindersViewProps> = ({ onNavigateTab }) =
 
       {/* Reminder Cards Content */}
       {loadingReminders ? (
-        <div className="flex items-center justify-center min-h-[220px]">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-cyan-400"></div>
+        <div className="flex flex-col items-center justify-center min-h-[220px] text-[#A9B8CC] space-y-3">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#00D9FF]" />
+          <span className="text-xs uppercase font-semibold tracking-wider text-[#00D9FF] font-mono">Loading reminders...</span>
         </div>
       ) : filteredReminders.length === 0 ? (
-        <div className="rounded-2xl border border-gray-800 bg-[#0d1017] p-12 text-center max-w-lg mx-auto">
-          <div className="w-16 h-16 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-center mx-auto text-3xl mb-4">
-            🛡️
+        <div className="rounded-3xl border border-[#1D3552] bg-[#0F1F35] p-12 text-center max-w-lg mx-auto card-3d">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#1677FF]/20 via-[#2196FF]/20 to-[#00D9FF]/20 border border-[#1677FF]/40 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-[#1677FF]/15">
+            <BellRing className="w-8 h-8 text-[#00D9FF]" />
           </div>
-          <h3 className="text-lg font-bold text-white mb-2">You're all caught up</h3>
-          <p className="text-sm text-gray-400 mb-6 leading-relaxed">
+          <h3 className="text-lg font-bold text-white mb-2 font-mono">You're All Caught Up</h3>
+          <p className="text-sm text-[#A9B8CC] mb-6 leading-relaxed">
             {activeTab === 'all' 
               ? 'No pending reminders for this vehicle. All insurance, PUC, and service tasks are on schedule.'
               : `No ${activeTab} reminders found for ${selectedVehicle.name}.`}
           </p>
           <button
             onClick={() => setIsAddOpen(true)}
-            className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-semibold text-sm shadow-lg shadow-cyan-500/20 transition-all cursor-pointer"
+            className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#1677FF] to-[#2196FF] hover:from-[#1360D4] hover:to-[#1677FF] text-white font-bold text-sm shadow-lg shadow-[#1677FF]/25 transition-all cursor-pointer btn-3d"
           >
             + Add Reminder
           </button>

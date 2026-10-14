@@ -71,19 +71,19 @@ export const VehiclesView: React.FC<VehiclesViewProps> = ({ onOpenAddModal }) =>
             {vehicles.length > 1 && (
               <button
                 onClick={() => setIsFleetModalOpen(true)}
-                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-[#1D232B] hover:bg-[#252C35] border border-[#00D4C7]/40 text-[#00D4C7] hover:text-white font-semibold text-xs shadow-md transition-all cursor-pointer btn-3d"
+                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-[#0F1F35] hover:bg-[#122A46] border border-[#1677FF]/40 text-[#00D9FF] hover:text-white font-semibold text-xs shadow-md transition-all cursor-pointer btn-3d"
                 title="Compare all vehicles in garage"
               >
-                <Layers className="w-3.5 h-3.5 text-[#00D4C7]" />
+                <Layers className="w-3.5 h-3.5 text-[#00D9FF]" />
                 <span>Fleet Comparison</span>
               </button>
             )}
 
             <button
               onClick={onOpenAddModal}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#00D4C7] to-blue-600 hover:from-[#00D4C7] hover:to-blue-500 text-black hover:text-white font-bold text-sm shadow-lg shadow-[#00D4C7]/20 transition-all cursor-pointer btn-3d"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#1677FF] hover:bg-[#2196FF] text-white font-bold text-sm shadow-lg shadow-[#1677FF]/25 transition-all cursor-pointer btn-3d"
             >
-              <Plus className="w-4 h-4 text-black group-hover:text-white" />
+              <Plus className="w-4 h-4 text-white" />
               <span>Add Vehicle</span>
             </button>
           </div>
@@ -91,19 +91,19 @@ export const VehiclesView: React.FC<VehiclesViewProps> = ({ onOpenAddModal }) =>
       />
 
       {vehicles.length === 0 ? (
-        <div className="rounded-3xl border border-[#252C35] bg-[#151A20] p-12 text-center max-w-lg mx-auto card-3d">
-          <div className="w-16 h-16 rounded-2xl bg-[#00D4C7]/10 border border-[#00D4C7]/30 flex items-center justify-center mx-auto text-3xl mb-4">
-            🚗
+        <div className="rounded-3xl border border-[#1D3552] bg-[#0F1F35] p-12 text-center max-w-lg mx-auto card-3d">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#1677FF]/20 via-[#2196FF]/20 to-[#00D9FF]/20 border border-[#1677FF]/40 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-[#1677FF]/15">
+            <Car className="w-8 h-8 text-[#00D9FF]" />
           </div>
-          <h3 className="text-lg font-bold text-white mb-2">No vehicles yet</h3>
-          <p className="text-sm text-gray-400 mb-6 leading-relaxed">
-            Add your first car, motorcycle, or scooter to start tracking services, documents, and expenses.
+          <h3 className="text-lg font-bold text-[#F5F9FF] mb-2 font-mono">Your Garage is Empty</h3>
+          <p className="text-sm text-[#A9B8CC] mb-6 leading-relaxed">
+            Add your car, motorcycle, or fleet vehicle to unlock maintenance schedules, document expirations, fuel logs, and AI diagnostics.
           </p>
           <button
             onClick={onOpenAddModal}
-            className="px-6 py-2.5 rounded-xl bg-[#00D4C7] hover:bg-[#00D4C7]/80 text-black font-bold text-sm transition-all shadow-lg shadow-[#00D4C7]/25"
+            className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#1677FF] to-[#2196FF] hover:from-[#1360D4] hover:to-[#1677FF] text-white font-bold text-sm transition-all shadow-lg shadow-[#1677FF]/25 cursor-pointer btn-3d"
           >
-            Add Your First Vehicle
+            + Add Your First Vehicle
           </button>
         </div>
       ) : (
@@ -115,22 +115,22 @@ export const VehiclesView: React.FC<VehiclesViewProps> = ({ onOpenAddModal }) =>
                 key={v.id}
                 className={`relative rounded-3xl border transition-all duration-300 overflow-hidden flex flex-col justify-between card-3d ${
                   isSelected
-                    ? 'bg-gradient-to-b from-[#18232e] via-[#151a20] to-[#0f131a] border-[#00D4C7]/70 shadow-2xl shadow-[#00D4C7]/15 ring-1 ring-[#00D4C7]/30'
-                    : 'bg-[#151A20] border-[#252C35] hover:border-[#384554] hover:bg-[#1A2028]'
+                    ? 'bg-gradient-to-b from-[#122A46] via-[#0F1F35] to-[#0B1628] border-[#00D9FF] shadow-2xl shadow-[#1677FF]/20 ring-1 ring-[#00D9FF]/40'
+                    : 'bg-[#0F1F35] border-[#1D3552] hover:border-[#1677FF]/50 hover:bg-[#122A46]'
                 }`}
               >
                 {/* Active Indicator & Metallic Top Bar */}
                 {isSelected ? (
-                  <div className="bg-[#00D4C7]/15 border-b border-[#00D4C7]/30 px-4 py-2 flex items-center justify-between text-xs text-[#00D4C7] font-semibold">
+                  <div className="bg-[#1677FF]/15 border-b border-[#1677FF]/30 px-4 py-2 flex items-center justify-between text-xs text-[#00D9FF] font-semibold">
                     <span className="flex items-center gap-1.5">
-                      <Check className="w-3.5 h-3.5 text-[#00D4C7]" /> Active Telemetry Vehicle
+                      <Check className="w-3.5 h-3.5 text-[#00D9FF]" /> Active Vehicle
                     </span>
-                    <span className="text-[10px] uppercase font-mono font-bold tracking-wider bg-[#00D4C7] text-black px-2 py-0.5 rounded">
+                    <span className="text-[10px] uppercase font-mono font-bold tracking-wider bg-[#1677FF] text-white px-2 py-0.5 rounded">
                       Active
                     </span>
                   </div>
                 ) : (
-                  <div className="h-1 bg-gradient-to-r from-transparent via-[#252C35] to-transparent" />
+                  <div className="h-1 bg-gradient-to-r from-transparent via-[#1D3552] to-transparent" />
                 )}
 
                 <div className="p-5 flex-1">
@@ -138,59 +138,59 @@ export const VehiclesView: React.FC<VehiclesViewProps> = ({ onOpenAddModal }) =>
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs px-2 py-0.5 rounded bg-[#1D232B] border border-[#252C35] text-gray-300 font-mono font-semibold">
+                        <span className="text-xs px-2 py-0.5 rounded bg-[#122A46] border border-[#1D3552] text-[#A9B8CC] font-mono font-semibold">
                           {v.brand}
                         </span>
-                        <span className="text-xs px-2 py-0.5 rounded bg-[#1D232B] text-gray-400 font-medium">
+                        <span className="text-xs px-2 py-0.5 rounded bg-[#122A46] text-[#A9B8CC] font-medium">
                           {v.fuelType}
                         </span>
                       </div>
-                      <h3 className="text-lg font-black text-white mt-2 leading-snug">
+                      <h3 className="text-lg font-black text-[#F5F9FF] mt-2 leading-snug">
                         {v.name}
                       </h3>
-                      <p className="text-xs text-gray-400">
+                      <p className="text-xs text-[#A9B8CC]">
                         {v.model} {v.variant ? `• ${v.variant}` : ''}
                       </p>
                     </div>
 
                     <div className="text-right">
-                      <span className="inline-block px-2.5 py-1 rounded-lg bg-[#0e1217] border border-[#252C35] text-xs font-mono font-bold text-[#00D4C7] tracking-wider shadow-inner">
+                      <span className="inline-block px-2.5 py-1 rounded-lg bg-[#07111F] border border-[#1D3552] text-xs font-mono font-bold text-[#00D9FF] tracking-wider shadow-inner">
                         {v.vehicleNumber}
                       </span>
                     </div>
                   </div>
 
                   {/* Stylized Vehicle Silhouette Display */}
-                  <div className="mt-4 p-3 rounded-2xl bg-[#0e1217]/70 border border-[#252C35]/60 flex items-center justify-between overflow-hidden relative group/car">
-                    <div className="flex items-center gap-2 text-xs text-gray-400">
-                      <div className="w-7 h-7 rounded-lg bg-[#00D4C7]/10 flex items-center justify-center text-[#00D4C7]">
+                  <div className="mt-4 p-3 rounded-2xl bg-[#07111F]/70 border border-[#1D3552]/60 flex items-center justify-between overflow-hidden relative group/car">
+                    <div className="flex items-center gap-2 text-xs text-[#A9B8CC]">
+                      <div className="w-7 h-7 rounded-lg bg-[#1677FF]/15 flex items-center justify-center text-[#00D9FF]">
                         <Car className="w-4 h-4" />
                       </div>
                       <span className="font-mono text-[11px] uppercase tracking-wider text-gray-300">
                         {v.model}
                       </span>
                     </div>
-                    <span className="text-[10px] font-mono text-gray-500 uppercase">
+                    <span className="text-[10px] font-mono text-[#71839A] uppercase">
                       Chassis Ready
                     </span>
                     {/* Ambient vehicle glow */}
-                    <div className="absolute right-0 top-0 w-24 h-full bg-gradient-to-l from-[#00D4C7]/5 to-transparent pointer-events-none" />
+                    <div className="absolute right-0 top-0 w-24 h-full bg-gradient-to-l from-[#1677FF]/15 to-transparent pointer-events-none" />
                   </div>
 
                   {/* Metrics grid */}
-                  <div className="mt-4 grid grid-cols-2 gap-3 pt-4 border-t border-[#252C35]">
-                    <div className="p-2.5 rounded-xl bg-[#1D232B]/80 border border-[#252C35]/60">
-                      <div className="flex items-center gap-1.5 text-[11px] text-gray-400 uppercase font-semibold">
-                        <Gauge className="w-3 h-3 text-[#00D4C7]" /> Odometer
+                  <div className="mt-4 grid grid-cols-2 gap-3 pt-4 border-t border-[#1D3552]">
+                    <div className="p-2.5 rounded-xl bg-[#0B1628]/80 border border-[#1D3552]/60">
+                      <div className="flex items-center gap-1.5 text-[11px] text-[#A9B8CC] uppercase font-semibold">
+                        <Gauge className="w-3 h-3 text-[#00D9FF]" /> Odometer
                       </div>
                       <div className="text-sm font-black text-white font-mono mt-1">
                         {formatOdometer(v.currentOdometer)}
                       </div>
                     </div>
 
-                    <div className="p-2.5 rounded-xl bg-[#1D232B]/80 border border-[#252C35]/60">
-                      <div className="flex items-center gap-1.5 text-[11px] text-gray-400 uppercase font-semibold">
-                        <Calendar className="w-3 h-3 text-cyan-400" /> Purchase
+                    <div className="p-2.5 rounded-xl bg-[#0B1628]/80 border border-[#1D3552]/60">
+                      <div className="flex items-center gap-1.5 text-[11px] text-[#A9B8CC] uppercase font-semibold">
+                        <Calendar className="w-3 h-3 text-[#2196FF]" /> Purchase
                       </div>
                       <div className="text-sm font-semibold text-gray-200 mt-1">
                         {formatDate(v.purchaseDate)}
@@ -200,17 +200,17 @@ export const VehiclesView: React.FC<VehiclesViewProps> = ({ onOpenAddModal }) =>
                 </div>
 
                 {/* Card Actions */}
-                <div className="p-4 bg-[#11151B] border-t border-[#252C35] flex items-center justify-between gap-2">
+                <div className="p-4 bg-[#0B1628] border-t border-[#1D3552] flex items-center justify-between gap-2">
                   {!isSelected ? (
                     <button
                       onClick={() => setSelectedVehicleId(v.id)}
-                      className="text-xs px-3.5 py-1.5 rounded-xl bg-[#1D232B] hover:bg-[#00D4C7]/20 hover:text-[#00D4C7] text-gray-300 font-semibold transition-all cursor-pointer border border-[#252C35] hover:border-[#00D4C7]/40"
+                      className="text-xs px-3.5 py-1.5 rounded-xl bg-[#122A46] hover:bg-[#1677FF]/25 hover:text-[#00D9FF] text-gray-300 font-semibold transition-all cursor-pointer border border-[#1D3552] hover:border-[#1677FF]/50"
                     >
                       Set as Active
                     </button>
                   ) : (
-                    <span className="text-[11px] text-[#00D4C7] font-semibold flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#00D4C7] animate-pulse" />
+                    <span className="text-[11px] text-[#00D9FF] font-semibold flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#00D9FF] animate-pulse" />
                       <span>Active Telemetry</span>
                     </span>
                   )}

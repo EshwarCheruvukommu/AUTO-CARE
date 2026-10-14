@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
-import * as THREE from 'three';
-import { Gauge, Car, ChevronDown, History, Printer, Shield, Activity, RotateCcw } from 'lucide-react';
+import React, { useRef, useState, useEffect } from 'react';
+import { Gauge, Car, ChevronDown, History, Printer, Activity } from 'lucide-react';
+import { motion, useMotionValue, useSpring, useTransform, useReducedMotion } from 'framer-motion';
 import { Vehicle } from '../../types';
 import { formatOdometer } from '../../utils/formatters';
 
@@ -23,306 +23,100 @@ export const Automotive3DHero: React.FC<Automotive3DHeroProps> = ({
   onPrintReport,
   onNavigateTab,
 }) => {
-  const mountRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [vehicleDropdownOpen, setVehicleDropdownOpen] = useState(false);
-  const [isInteracting, setIsInteracting] = useState(false);
-  const mousePos = useRef({ x: 0, y: 0, targetX: 0, targetY: 0 });
-  const isDragging = useRef(false);
-  const prevMouseX = useRef(0);
-  const userRotationY = useRef(0);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
+  // Respect user's accessibility reduced motion preferences
+  const shouldReduceMotion = useReducedMotion();
+
+  // Normalized cursor coordinates [-0.5, 0.5]
+  const rawMouseX = useMotionValue(0);
+  const rawMouseY = useMotionValue(0);
+
+  // Framer Motion useSpring for smooth, sophisticated physics-based tilt and latency
+  const springConfig = { damping: 26, stiffness: 180, mass: 0.6 };
+  const smoothMouseX = useSpring(rawMouseX, springConfig);
+  const smoothMouseY = useSpring(rawMouseY, springConfig);
+
+  // 3D Parallax tilt rotations (subtle, non-distracting automotive showroom tilt)
+  const tiltRotateX = useTransform(smoothMouseY, [-0.5, 0.5], [4.5, -4.5]);
+  const tiltRotateY = useTransform(smoothMouseX, [-0.5, 0.5], [-6, 6]);
+
+  // Layered parallax translations for realistic optical depth
+  const carTranslateX = useTransform(smoothMouseX, [-0.5, 0.5], [-9, 9]);
+  const carTranslateY = useTransform(smoothMouseY, [-0.5, 0.5], [-5, 5]);
+
+  // Dynamic rim-light and highlight reflection movement
+  const highlightPercentX = useTransform(smoothMouseX, [-0.5, 0.5], [20, 80]);
+  const highlightPercentY = useTransform(smoothMouseY, [-0.5, 0.5], [20, 80]);
+
+  // Mouse move handler on the hero vehicle container
+  const handleHeroMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (shouldReduceMotion) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const normalizedX = (e.clientX - rect.left) / rect.width - 0.5;
+    const normalizedY = (e.clientY - rect.top) / rect.height - 0.5;
+    rawMouseX.set(normalizedX);
+    rawMouseY.set(normalizedY);
+  };
+
+  const handleHeroMouseLeave = () => {
+    rawMouseX.set(0);
+    rawMouseY.set(0);
+  };
+
+  // Preload hero everyday car image
   useEffect(() => {
-    const container = mountRef.current;
-    if (!container) return;
-
-    // Check prefers-reduced-motion
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    // Setup Three.js Scene
-    const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x0b0e14, 0.08);
-
-    const width = container.clientWidth || 400;
-    const height = container.clientHeight || 280;
-
-    const camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 100);
-    camera.position.set(0, 1.2, 5.2);
-
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
-    renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    container.innerHTML = '';
-    container.appendChild(renderer.domElement);
-
-    // Automotive Car Group
-    const carGroup = new THREE.Group();
-    scene.add(carGroup);
-
-    // 1. CAR BODY (Aerodynamic sports GT chassis)
-    const bodyMaterial = new THREE.MeshStandardMaterial({
-      color: 0x151a22,
-      metalness: 0.88,
-      roughness: 0.22,
-    });
-
-    const bodyGeometry = new THREE.BoxGeometry(2.4, 0.45, 1.15);
-    // Bevel top edges
-    const bodyMesh = new THREE.Mesh(bodyGeometry, bodyMaterial);
-    bodyMesh.position.y = 0.45;
-    bodyMesh.castShadow = true;
-    bodyMesh.receiveShadow = true;
-    carGroup.add(bodyMesh);
-
-    // 2. CABIN & WINDSHIELD (Sleek cockpit)
-    const cabinMaterial = new THREE.MeshStandardMaterial({
-      color: 0x061118,
-      metalness: 0.95,
-      roughness: 0.1,
-      transparent: true,
-      opacity: 0.85,
-    });
-    const cabinGeometry = new THREE.BoxGeometry(1.25, 0.38, 0.95);
-    const cabinMesh = new THREE.Mesh(cabinGeometry, cabinMaterial);
-    cabinMesh.position.set(-0.1, 0.8, 0);
-    cabinMesh.castShadow = true;
-    carGroup.add(cabinMesh);
-
-    // Hood Slope (Front aerodynamic wedge)
-    const hoodGeometry = new THREE.CylinderGeometry(0.55, 0.6, 0.9, 4);
-    const hoodMesh = new THREE.Mesh(hoodGeometry, bodyMaterial);
-    hoodMesh.rotation.z = Math.PI / 2;
-    hoodMesh.rotation.y = Math.PI / 4;
-    hoodMesh.position.set(1.0, 0.52, 0);
-    hoodMesh.scale.set(0.4, 0.8, 1.15);
-    carGroup.add(hoodMesh);
-
-    // 3. FRONT LED LIGHT BAR (Electric Teal)
-    const headlightMaterial = new THREE.MeshBasicMaterial({ color: 0x00d4c7 });
-    const headlightGeo = new THREE.BoxGeometry(0.08, 0.08, 0.9);
-    const headlightMesh = new THREE.Mesh(headlightGeo, headlightMaterial);
-    headlightMesh.position.set(1.21, 0.5, 0);
-    carGroup.add(headlightMesh);
-
-    // 4. REAR TAILLIGHT STRIP (Automotive Red)
-    const taillightMaterial = new THREE.MeshBasicMaterial({ color: 0xff4d4f });
-    const taillightGeo = new THREE.BoxGeometry(0.06, 0.08, 0.92);
-    const taillightMesh = new THREE.Mesh(taillightGeo, taillightMaterial);
-    taillightMesh.position.set(-1.21, 0.52, 0);
-    carGroup.add(taillightMesh);
-
-    // 5. WHEELS & ALLOY RIMS
-    const wheelMaterial = new THREE.MeshStandardMaterial({ color: 0x111418, roughness: 0.85 });
-    const rimMaterial = new THREE.MeshStandardMaterial({ color: 0xb8c2cc, metalness: 0.95, roughness: 0.15 });
-
-    const wheelGeo = new THREE.CylinderGeometry(0.28, 0.28, 0.18, 24);
-    const rimGeo = new THREE.CylinderGeometry(0.18, 0.18, 0.19, 16);
-
-    const wheelPositions = [
-      [0.75, 0.28, 0.6],
-      [0.75, 0.28, -0.6],
-      [-0.75, 0.28, 0.6],
-      [-0.75, 0.28, -0.6],
-    ];
-
-    wheelPositions.forEach(([x, y, z]) => {
-      const wheel = new THREE.Mesh(wheelGeo, wheelMaterial);
-      wheel.rotation.x = Math.PI / 2;
-      wheel.position.set(x, y, z);
-      wheel.castShadow = true;
-
-      const rim = new THREE.Mesh(rimGeo, rimMaterial);
-      wheel.add(rim);
-
-      // Subtle cyan brake caliper accent
-      const caliper = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.12, 0.1), new THREE.MeshBasicMaterial({ color: 0x00d4c7 }));
-      caliper.position.set(0.12, 0, 0);
-      wheel.add(caliper);
-
-      carGroup.add(wheel);
-    });
-
-    // 6. UNDERBODY SHADOW & REFLECTIVE DISC
-    const shadowGeo = new THREE.PlaneGeometry(3.2, 1.8);
-    const shadowMat = new THREE.MeshBasicMaterial({
-      color: 0x00d4c7,
-      transparent: true,
-      opacity: 0.18,
-    });
-    const shadowMesh = new THREE.Mesh(shadowGeo, shadowMat);
-    shadowMesh.rotation.x = -Math.PI / 2;
-    shadowMesh.position.y = 0.02;
-    carGroup.add(shadowMesh);
-
-    // Perspective circular ground grid
-    const gridHelper = new THREE.GridHelper(8, 16, 0x00d4c7, 0x1d232b);
-    gridHelper.position.y = 0;
-    scene.add(gridHelper);
-
-    // 7. LIGHTING
-    // Ambient light
-    const ambientLight = new THREE.AmbientLight(0x0e141c, 2.5);
-    scene.add(ambientLight);
-
-    // Key Titanium White Light
-    const keyLight = new THREE.DirectionalLight(0xf5f7fa, 3.2);
-    keyLight.position.set(4, 6, 5);
-    keyLight.castShadow = true;
-    scene.add(keyLight);
-
-    // Rim Electric Teal Light
-    const rimLight = new THREE.DirectionalLight(0x00d4c7, 4.0);
-    rimLight.position.set(-4, 2, -3);
-    scene.add(rimLight);
-
-    // Subtle front spotlight
-    const frontSpot = new THREE.SpotLight(0x00d4c7, 2.5, 8, Math.PI / 6, 0.4);
-    frontSpot.position.set(3, 2, 2);
-    frontSpot.target = carGroup;
-    scene.add(frontSpot);
-
-    // Mouse Tracking for Parallax
-    const handleMouseMove = (e: MouseEvent) => {
-      const rect = container.getBoundingClientRect();
-      const normX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-      const normY = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
-      mousePos.current.targetX = normX;
-      mousePos.current.targetY = normY;
-
-      if (isDragging.current) {
-        const deltaX = e.clientX - prevMouseX.current;
-        userRotationY.current += deltaX * 0.01;
-        prevMouseX.current = e.clientX;
-      }
-    };
-
-    const handleMouseDown = (e: MouseEvent) => {
-      isDragging.current = true;
-      prevMouseX.current = e.clientX;
-      setIsInteracting(true);
-    };
-
-    const handleMouseUp = () => {
-      isDragging.current = false;
-      setIsInteracting(false);
-    };
-
-    container.addEventListener('mousemove', handleMouseMove);
-    container.addEventListener('mousedown', handleMouseDown);
-    window.addEventListener('mouseup', handleMouseUp);
-
-    // Animation Loop
-    let animationId: number;
-    let clock = new THREE.Clock();
-    let isVisible = true;
-
-    // IntersectionObserver to pause when off-screen
-    const observer = new IntersectionObserver(([entry]) => {
-      isVisible = entry.isIntersecting;
-    });
-    observer.observe(container);
-
-    const animate = () => {
-      animationId = requestAnimationFrame(animate);
-
-      if (!isVisible) return;
-
-      const delta = clock.getDelta();
-      const elapsed = clock.getElapsedTime();
-
-      // Smooth mouse lerp
-      mousePos.current.x += (mousePos.current.targetX - mousePos.current.x) * 0.05;
-      mousePos.current.y += (mousePos.current.targetY - mousePos.current.y) * 0.05;
-
-      if (!prefersReducedMotion) {
-        // Continuous slow rotation around Y + user drag + mouse parallax
-        const baseAutoRotation = isDragging.current ? 0 : Math.sin(elapsed * 0.4) * 0.35 + 0.45;
-        carGroup.rotation.y = baseAutoRotation + userRotationY.current + mousePos.current.x * 0.35;
-        carGroup.rotation.x = mousePos.current.y * 0.12;
-
-        // Gentle vertical floating motion
-        carGroup.position.y = Math.sin(elapsed * 1.5) * 0.06;
-
-        // Camera subtle sway
-        camera.position.x = mousePos.current.x * 0.3;
-        camera.position.y = 1.2 + mousePos.current.y * 0.15;
-        camera.lookAt(0, 0.4, 0);
-
-        // Ground grid slight oscillation
-        gridHelper.position.z = (elapsed * 0.2) % 0.5;
-      } else {
-        carGroup.rotation.y = 0.55;
-        carGroup.position.y = 0;
-      }
-
-      renderer.render(scene, camera);
-    };
-
-    animate();
-
-    // Resize Handler
-    const handleResize = () => {
-      if (!container) return;
-      const newW = container.clientWidth;
-      const newH = container.clientHeight;
-      camera.aspect = newW / newH;
-      camera.updateProjectionMatrix();
-      renderer.setSize(newW, newH);
-    };
-
-    window.addEventListener('resize', handleResize);
-
-    return () => {
-      cancelAnimationFrame(animationId);
-      observer.disconnect();
-      container.removeEventListener('mousemove', handleMouseMove);
-      container.removeEventListener('mousedown', handleMouseDown);
-      window.removeEventListener('mouseup', handleMouseUp);
-      window.removeEventListener('resize', handleResize);
-      renderer.dispose();
-      bodyGeometry.dispose();
-      bodyMaterial.dispose();
-      cabinGeometry.dispose();
-      cabinMaterial.dispose();
-    };
+    const img = new Image();
+    img.src = '/src/assets/images/hero_everyday_car_1791023391107.jpg';
+    img.onload = () => setImageLoaded(true);
   }, []);
 
   return (
-    <div className="relative rounded-3xl overflow-hidden border border-[#252C35] bg-gradient-to-r from-[#0B0E14] via-[#151A20] to-[#0B0E14] shadow-2xl p-6 sm:p-8 card-3d">
-      {/* Ambient Lighting Orbs */}
-      <div className="absolute top-0 right-10 w-96 h-96 bg-[#00D4C7]/15 rounded-full blur-3xl pointer-events-none glow-orb-3d" />
-      <div className="absolute bottom-0 left-1/4 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+    <div
+      ref={containerRef}
+      className="relative rounded-3xl overflow-hidden border border-[#1D3552] bg-gradient-to-r from-[#07111F] via-[#0B1628] to-[#0F1F35] shadow-2xl p-6 sm:p-8 card-3d light-sweep-effect select-none"
+    >
+      {/* Dynamic Electric Blue Rim Light & Cyan Ambient Glow */}
+      <div 
+        className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full blur-[140px] pointer-events-none opacity-25"
+        style={{
+          background: 'radial-gradient(circle at 60% 40%, #1677FF 0%, transparent 70%)'
+        }}
+      />
+      <div className="absolute -bottom-10 left-1/4 w-80 h-80 bg-[#00D9FF]/10 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Automotive Telemetry Grid Background */}
-      <div className="absolute inset-0 telemetry-grid opacity-30 pointer-events-none" />
+      {/* Automotive HUD Grid Background */}
+      <div className="absolute inset-0 telemetry-grid opacity-35 pointer-events-none" />
 
-      <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-        {/* Left: Active Vehicle Specs & Telemetry */}
-        <div className="space-y-3.5 max-w-xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#00D4C7]/10 border border-[#00D4C7]/30 text-[#00D4C7] text-xs font-semibold">
-            <span className="w-2 h-2 rounded-full bg-[#00D4C7] animate-pulse" />
-            <span className="tracking-wide">Active Vehicle Telemetry</span>
+      <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+        {/* Left Column: Active Vehicle Specs & Command */}
+        <div className="space-y-4 max-w-xl">
+          {/* VEHICLE DATA SYNCED Status Pill */}
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#1677FF]/15 border border-[#1677FF]/40 text-[#00D9FF] text-xs font-semibold shadow-inner">
+            <span className="w-2 h-2 rounded-full bg-[#00D9FF] animate-pulse" />
+            <span className="tracking-wider uppercase font-mono text-[11px]">Vehicle Data Synced</span>
           </div>
 
           <div>
-            <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight flex items-center gap-3">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#F5F9FF] tracking-tight leading-tight flex items-center gap-3">
               <span>{selectedVehicle.name}</span>
             </h1>
 
-            <div className="flex items-center gap-2.5 mt-2.5 flex-wrap text-sm">
-              <span className="text-[#00D4C7] font-bold font-mono bg-[#1D232B] px-3 py-1 rounded-xl border border-[#00D4C7]/40 tracking-wider shadow-sm">
+            <div className="flex items-center gap-2.5 mt-3 flex-wrap text-sm">
+              <span className="text-white font-extrabold font-mono bg-[#1677FF] px-3 py-1 rounded-xl shadow-md tracking-wider">
                 {selectedVehicle.vehicleNumber}
               </span>
-              <span className="text-gray-300 font-medium">
+              <span className="text-[#A9B8CC] font-medium text-xs sm:text-sm">
                 {selectedVehicle.brand} • {selectedVehicle.model}{selectedVehicle.variant ? ` • ${selectedVehicle.variant}` : ''}
               </span>
-              <span className="text-gray-600">•</span>
-              <span className="px-2.5 py-0.5 rounded-lg bg-[#1D232B] text-gray-300 text-xs font-semibold border border-gray-800">
+              <span className="text-[#1D3552]">•</span>
+              <span className="px-2.5 py-0.5 rounded-lg bg-[#122A46] text-[#A9B8CC] text-xs font-semibold border border-[#1D3552]">
                 {selectedVehicle.fuelType}
               </span>
-              <span className="text-gray-600">•</span>
-              <span className="text-emerald-400 font-mono font-bold flex items-center gap-1.5 bg-emerald-950/40 px-2.5 py-0.5 rounded-lg border border-emerald-500/20 text-xs">
+              <span className="text-[#1D3552]">•</span>
+              <span className="text-[#22C55E] font-mono font-bold flex items-center gap-1.5 bg-[#22C55E]/10 px-2.5 py-0.5 rounded-lg border border-[#22C55E]/30 text-xs">
                 <Gauge className="w-3.5 h-3.5" />
                 <span>{formatOdometer(selectedVehicle.currentOdometer)}</span>
               </span>
@@ -330,25 +124,25 @@ export const Automotive3DHero: React.FC<Automotive3DHeroProps> = ({
           </div>
 
           {/* Quick Vehicle Switcher Dropdown & Actions */}
-          <div className="flex flex-wrap items-center gap-3 pt-2">
+          <div className="flex flex-wrap items-center gap-2.5 pt-2">
             {/* Quick Switch Dropdown */}
             {vehicles.length > 1 && (
               <div className="relative">
                 <button
                   onClick={() => setVehicleDropdownOpen(!vehicleDropdownOpen)}
-                  className="px-3.5 py-2.5 rounded-xl bg-[#1D232B] border border-gray-700/80 hover:border-[#00D4C7]/50 text-white text-xs font-semibold transition-all cursor-pointer flex items-center gap-2 shadow-md hover:bg-[#252C35]"
+                  className="px-3.5 py-2.5 rounded-xl bg-[#0F1F35] border border-[#1D3552] hover:border-[#1677FF]/60 text-white text-xs font-semibold transition-all cursor-pointer flex items-center gap-2 shadow-md hover:bg-[#122A46] btn-3d"
                 >
-                  <Car className="w-3.5 h-3.5 text-[#00D4C7]" />
+                  <Car className="w-3.5 h-3.5 text-[#00D9FF]" />
                   <span>Switch Vehicle</span>
-                  <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform ${vehicleDropdownOpen ? 'rotate-180 text-[#00D4C7]' : ''}`} />
+                  <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform ${vehicleDropdownOpen ? 'rotate-180 text-[#00D9FF]' : ''}`} />
                 </button>
 
                 {vehicleDropdownOpen && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setVehicleDropdownOpen(false)} />
-                    <div className="absolute left-0 top-full mt-2 w-64 bg-[#151A20] border border-[#00D4C7]/40 rounded-2xl shadow-2xl py-2 z-50 animate-in fade-in slide-in-from-top-2">
-                      <div className="px-3 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                        My Vehicles ({vehicles.length})
+                    <div className="absolute left-0 top-full mt-2 w-64 bg-[#0F1F35] border border-[#1677FF]/40 rounded-2xl shadow-2xl py-2 z-50 animate-in fade-in slide-in-from-top-2">
+                      <div className="px-3 py-1 text-[10px] font-bold text-[#A9B8CC] uppercase tracking-wider">
+                        My Garage Fleet ({vehicles.length})
                       </div>
                       {vehicles.map((v) => (
                         <button
@@ -357,13 +151,13 @@ export const Automotive3DHero: React.FC<Automotive3DHeroProps> = ({
                             onSelectVehicle(v.id);
                             setVehicleDropdownOpen(false);
                           }}
-                          className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-[#1D232B] transition-colors ${
-                            selectedVehicle.id === v.id ? 'bg-[#00D4C7]/15 text-[#00D4C7] font-bold' : 'text-gray-300'
+                          className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-[#122A46] transition-colors cursor-pointer ${
+                            selectedVehicle.id === v.id ? 'bg-[#1677FF]/20 text-[#00D9FF] font-bold' : 'text-gray-300'
                           }`}
                         >
                           <span className="truncate pr-2">{v.name}</span>
                           {selectedVehicle.id === v.id && (
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#00D4C7] shrink-0" />
+                            <span className="w-2 h-2 rounded-full bg-[#00D9FF] shrink-0" />
                           )}
                         </button>
                       ))}
@@ -375,44 +169,109 @@ export const Automotive3DHero: React.FC<Automotive3DHeroProps> = ({
 
             <button
               onClick={onOpenTimeline}
-              className="px-3.5 py-2.5 rounded-xl bg-[#1D232B] hover:bg-[#252C35] border border-gray-700/80 hover:border-[#00D4C7]/50 text-[#00D4C7] hover:text-white text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 shadow-md"
+              className="px-3.5 py-2.5 rounded-xl bg-[#0F1F35] hover:bg-[#122A46] border border-[#1D3552] hover:border-[#1677FF]/50 text-[#00D9FF] hover:text-white text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 shadow-md btn-3d"
               title="View Complete Vehicle Lifetime Timeline"
             >
-              <History className="w-3.5 h-3.5 text-[#00D4C7]" />
+              <History className="w-3.5 h-3.5 text-[#00D9FF]" />
               <span className="hidden sm:inline">Timeline</span>
             </button>
 
             <button
               onClick={onPrintReport}
-              className="px-3.5 py-2.5 rounded-xl bg-[#1D232B] hover:bg-[#252C35] border border-gray-700/80 hover:border-[#00D4C7]/50 text-gray-200 hover:text-white text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 shadow-md"
+              className="px-3.5 py-2.5 rounded-xl bg-[#0F1F35] hover:bg-[#122A46] border border-[#1D3552] hover:border-[#1677FF]/50 text-gray-200 hover:text-white text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 shadow-md btn-3d"
               title="Print Official Maintenance Certificate"
             >
-              <Printer className="w-3.5 h-3.5 text-[#00D4C7]" />
+              <Printer className="w-3.5 h-3.5 text-[#2196FF]" />
               <span className="hidden sm:inline">Report / PDF</span>
             </button>
 
             <button
               onClick={() => onNavigateTab('vehicles')}
-              className="px-4 py-2.5 rounded-xl bg-[#252C35] hover:bg-[#2F3742] text-gray-200 text-xs font-semibold border border-gray-700 transition-all cursor-pointer"
+              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#1677FF] to-[#2196FF] hover:from-[#1360D4] hover:to-[#1677FF] text-white font-extrabold text-xs shadow-lg shadow-[#1677FF]/25 transition-all cursor-pointer btn-3d"
             >
               Manage Vehicle
             </button>
           </div>
         </div>
 
-        {/* Right: Real 3D Three.js Automotive Canvas */}
-        <div className="relative w-full lg:w-[480px] h-[260px] sm:h-[280px] flex items-center justify-center">
-          <div
-            ref={mountRef}
-            className="w-full h-full cursor-grab active:cursor-grabbing select-none"
-            title="Interactive 3D Automotive View - Drag to rotate, move mouse for parallax"
-          />
+        {/* Right Column: Photorealistic Everyday Car Showcase with Framer Motion useSpring 3D Tilt */}
+        <div 
+          onMouseMove={handleHeroMouseMove}
+          onMouseLeave={handleHeroMouseLeave}
+          className="relative w-full lg:w-[500px] h-[260px] sm:h-[290px] flex items-center justify-center group/hero [perspective:1000px]"
+        >
+          {/* Depth Backing Plate */}
+          <div className="absolute inset-0 rounded-3xl bg-[#0B1628] border border-[#1D3552]/80 shadow-2xl overflow-hidden" />
 
-          {/* Interactive Hint Badge */}
-          <div className="absolute bottom-2 right-2 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#0B0E14]/80 border border-[#252C35] text-[10px] text-gray-400 pointer-events-none backdrop-blur-md">
-            <Activity className="w-3 h-3 text-[#00D4C7]" />
-            <span>3D Interactive • Drag to inspect</span>
-          </div>
+          {/* Interactive Parallax Canvas Container Powered by Framer Motion useSpring */}
+          <motion.div 
+            style={
+              shouldReduceMotion
+                ? undefined
+                : {
+                    rotateX: tiltRotateX,
+                    rotateY: tiltRotateY,
+                    transformStyle: 'preserve-3d',
+                  }
+            }
+            className="relative w-full h-full rounded-3xl overflow-hidden cursor-crosshair transition-shadow duration-300"
+          >
+            {/* Loading Skeleton */}
+            <div 
+              className={`absolute inset-0 bg-gradient-to-r from-[#07111F] via-[#0F1F35] to-[#0B1628] transition-opacity duration-700 ${
+                imageLoaded ? 'opacity-0' : 'opacity-100'
+              }`}
+            />
+
+            {/* Photorealistic Everyday Production Car Image with Spring-Damped Parallax Translation */}
+            <motion.img
+              src="/src/assets/images/hero_everyday_car_1791023391107.jpg"
+              alt="Photorealistic modern everyday production car in cinematic dark navy setting with blue rim lighting"
+              referrerPolicy="no-referrer"
+              className={`w-full h-full object-cover object-center filter saturate-[1.12] contrast-[1.08] transition-opacity duration-700 ${
+                imageLoaded ? 'opacity-90' : 'opacity-0'
+              }`}
+              style={
+                shouldReduceMotion
+                  ? { transform: 'scale(1.04)' }
+                  : {
+                      x: carTranslateX,
+                      y: carTranslateY,
+                      scale: 1.08,
+                    }
+              }
+            />
+
+            {/* Dynamic Blue & Cyan Rim Lighting Overlay with Cursor Tracking */}
+            <motion.div 
+              className="absolute inset-0 pointer-events-none transition-opacity duration-500 opacity-60 group-hover/hero:opacity-90"
+              style={{
+                background: shouldReduceMotion
+                  ? 'radial-gradient(circle at 50% 50%, rgba(22, 119, 255, 0.28) 0%, rgba(0, 217, 255, 0.12) 40%, transparent 70%)'
+                  : useTransform(
+                      [highlightPercentX, highlightPercentY],
+                      ([x, y]) => `radial-gradient(circle at ${x}% ${y}%, rgba(22, 119, 255, 0.32) 0%, rgba(0, 217, 255, 0.14) 40%, transparent 70%)`
+                    )
+              }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#07111F] via-transparent to-transparent opacity-80" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#07111F]/80 via-transparent to-[#07111F]/40" />
+
+            {/* Subtle Horizon Ground Reflection Grid */}
+            <div className="absolute bottom-0 inset-x-0 h-16 bg-gradient-to-t from-[#07111F] to-transparent pointer-events-none" />
+
+            {/* Spec Badge */}
+            <div className="absolute top-3 left-3 flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#07111F]/85 border border-[#1D3552] text-[10px] text-[#A9B8CC] backdrop-blur-md">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#00D9FF] animate-ping" />
+              <span className="font-mono uppercase font-bold text-white">Everyday Production Spec</span>
+            </div>
+
+            {/* 3D Depth Interactive Hint */}
+            <div className="absolute bottom-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#07111F]/85 border border-[#1D3552] text-[10px] text-[#A9B8CC] pointer-events-none backdrop-blur-md">
+              <Activity className="w-3 h-3 text-[#00D9FF]" />
+              <span>3D Motion • Interactive</span>
+            </div>
+          </motion.div>
         </div>
       </div>
     </div>

@@ -1,9 +1,11 @@
 import 'dotenv/config';
 import express, { Request, Response } from 'express';
+import http from 'http';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI, LiveServerMessage, Modality } from '@google/genai';
+import { WebSocketServer, WebSocket } from 'ws';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -22,119 +24,34 @@ const PORT = Number(process.env.PORT) || 3000;
 
 app.use(express.json({ limit: '10mb' }));
 
-// Strong, read-only system instruction for AutoCare AI with Phase 10.5 Advanced Vehicle Intelligence (Features 9–15)
-const AUTOCARE_SYSTEM_INSTRUCTION = `You are AutoCare AI, the intelligent vehicle-management and automotive insights assistant inside the AutoCare application.
+// Singleton GoogleGenAI instance for high performance and zero initialization overhead per request
+let cachedAIInstance: GoogleGenAI | null = null;
+function getCachedGenAI(apiKey: string): GoogleGenAI {
+  if (!cachedAIInstance) {
+    cachedAIInstance = new GoogleGenAI({
+      apiKey,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build',
+        },
+      },
+    });
+  }
+  return cachedAIInstance;
+}
 
-You have access ONLY to the authenticated user's currently selected vehicle context provided below.
+// Strong, read-only system instruction for AutoCare AI (Streamlined, zero bloat, high precision)
+const AUTOCARE_SYSTEM_INSTRUCTION = `You are AutoCare AI, the intelligent, warm automotive co-pilot inside AutoCare.
 
-==================================================
-CORE PRINCIPLES & BOUNDARIES
-==================================================
-1. Strictly Read-Only:
-   You cannot create, edit, or delete AutoCare records. If the user asks to add, edit, or delete records (e.g., "create a reminder", "delete an expense", "add a service"), explain that you are read-only and direct them to the appropriate AutoCare section in the app.
-
-2. Factual & Grounded (Anti-Hallucination):
-   Answer questions using ONLY the provided vehicle context.
-   Never invent vehicle specifications, numbers, service dates, costs, fuel amounts, or issues.
-   Never assume information that is not present in the provided context.
-   If information is unavailable (e.g., no documents, no fuel entries, or no service records), clearly state that the information is not recorded in AutoCare yet.
-
-3. Privacy & Security:
-   Do not reveal internal IDs, user IDs, authentication tokens, API keys, database implementation details, or security configuration.
-
-4. Empty Data Handling:
-   Gracefully handle empty collections without treating them as system errors. For example:
-   - No service records: "There are currently no service records for this vehicle."
-   - No fuel records: "There isn't enough recorded fuel data to calculate mileage."
-   - No expense records: "No vehicle expenses are currently recorded in AutoCare."
-
-5. Odometer Integrity & 0 KM Handling:
-   A current odometer of 0 km is a completely VALID and legitimate odometer reading (e.g. for brand new vehicles).
-   - If the current odometer is 0 km, you MUST explicitly state that the current odometer is 0 km (e.g., "Your current odometer reading is 0 km.").
-   - NEVER treat 0 km as missing, unrecorded, or unknown.
-   - Only say "No current odometer reading has been recorded" if the odometer is truly null, undefined, or missing.
-
-6. Fuel Quantity & Cost Clarity:
-   When answering questions about fuel records, ALWAYS include:
-   - Total number of fuel entries logged
-   - Total fuel quantity in litres (e.g., "20 L")
-   - Total fuel cost (e.g., "₹2,000")
-   Example: "You have recorded 1 fuel entry totaling 20 L, with a total fuel cost of ₹2,000."
-
-==================================================
-PHASE 10.5 ADVANCED INTELLIGENCE GUIDELINES (FEATURES 9–15)
-==================================================
-
-FEATURE 9 — ADVANCED TREND ANALYSIS:
-- Mileage Trends:
-  * 1–2 fuel records: Provide available stats. Clearly state that at least 3 fuel entries (2+ interval calculations) are needed to determine a reliable long-term trend.
-  * 3+ records: Analyze chronological interval mileages. Use neutral, factual wording such as: "Your recorded mileage has changed from X km/L to Y km/L." Avoid misleading claims.
-- Fuel Cost Trends: Cite changes in refill costs or price per litre across recorded entries.
-- Expense Trends: Compare chronological monthly spending (e.g., "Your recorded vehicle expenses changed from ₹A in [Month 1] to ₹B in [Month 2]."). Note that months without records mean no expenses were logged in AutoCare.
-- Service Trends: Summarize frequency, cost progression, and repeated service types without diagnosing mechanical issues.
-
-FEATURE 10 — AI COST FORECASTING:
-- Estimate future vehicle expenses ONLY when enough historical data exists.
-- FORECASTING RULES:
-  * Forecasts MUST be clearly labeled as rough estimates based on past user logs. Never present predictions as guaranteed values ("Based on your recorded expenses, a rough estimate for next month is ₹X", NOT "You will spend ₹X").
-  * Distinguish RECORDED expenses vs ESTIMATED future expenses.
-  * Provide breakdown where possible: Estimated fuel, estimated service/maintenance, estimated other, and estimated total budget.
-  * If insufficient data exists: "I don't have enough historical AutoCare data to produce a reliable estimate."
-
-FEATURE 11 — AI MAINTENANCE PREDICTION:
-- SAFETY BOUNDARY: This is NOT a mechanical diagnostic system.
-  * NEVER claim: "Your brakes will fail", "Your engine needs replacement", or "Your battery will die".
-  * Identify maintenance areas that MAY deserve attention based on:
-    1. Distance and time elapsed since last recorded service.
-    2. Overdue and due-soon maintenance reminders.
-    3. Areas with NO recent recorded logs (e.g. Battery, Tyres, Brakes).
-  * MANDATORY DISCLAIMER: "For exact manufacturer maintenance intervals, consult your vehicle's owner's manual or service center."
-
-FEATURE 12 — AI DOCUMENT & INVOICE INTELLIGENCE:
-- Firebase Storage is NOT available in this project; scanned file uploads/images are not accessible.
-- Analyze stored document metadata (type, number, issue date, expiry date, notes).
-- Summarize documents, extract expiry dates, and verify compliance status.
-- If user asks for file content or scanned invoice details: "I can only access the document information currently stored in AutoCare." Never hallucinate document contents.
-
-FEATURE 13 — ADVANCED NATURAL-LANGUAGE VEHICLE ASSISTANT:
-- Support natural multi-turn conversations. Maintain context during the conversation.
-- Seamlessly resolve conversational references such as "that", "it", "my car", "that service", "the latest one", "before that", "this expense", "the previous month", "my last service".
-- Always resolve these references strictly against the CURRENT ACTIVE VEHICLE context.
-- Never mix data across different vehicles.
-
-FEATURE 14 — AI TRIP READINESS ASSISTANT:
-- Evaluate readiness for a long journey based on AutoCare records:
-  1. Documents & Legal Compliance: Insurance validity, PUC validity, Registration (RC).
-  2. Maintenance Status: Distance/time since last service, overdue maintenance tasks.
-  3. Fuel & Mileage: Fuel economy and range.
-  4. Essential Physical Checks Checklist: Tyres (pressure, tread, spare tyre), battery condition, fluid levels (engine oil, coolant, brake fluid, washer fluid), lights and wiper blades.
-- SAFETY BOUNDARY: Never claim "Your car is definitely safe for a trip." Use "Based on the AutoCare records available..." and remind user that digital records cannot replace a physical pre-trip inspection.
-
-FEATURE 15 — DEEP VEHICLE HEALTH / MANAGEMENT ANALYSIS:
-- When asked for a complete AI analysis ("Give me a complete AI analysis of my vehicle"):
-  Provide structured analysis covering:
-  1. VEHICLE OVERVIEW
-  2. MAINTENANCE & SERVICE SUMMARY
-  3. FUEL & MILEAGE EFFICIENCY
-  4. EXPENSES & COST DISTRIBUTION
-  5. DOCUMENTS & LEGAL COMPLIANCE
-  6. REMINDERS & SCHEDULE
-  7. TRENDS & HISTORICAL PATTERNS
-  8. POTENTIAL AREAS TO WATCH
-  9. RECOMMENDED NEXT STEPS
-- CONFIDENCE RATINGS:
-  * HIGH CONFIDENCE: Directly supported by stored AutoCare data.
-  * MEDIUM CONFIDENCE: Pattern inferred from sufficient historical records.
-  * INSUFFICIENT DATA: Areas with missing or incomplete logs.
-- HEALTH BOUNDARY: Do NOT provide a medical-style "health score" (e.g. "engine health is 95%"). Do NOT claim definitive mechanical health.
-- Separate: KNOWN DATA, OBSERVED PATTERNS, AREAS WITH INSUFFICIENT DATA, RECOMMENDED CHECKS.
-
-==================================================
-RESPONSE STYLE & FORMATTING
-==================================================
-- Use clean formatting with clear headings, bullet points, and highlighted numbers where helpful.
-- Be warm, professional, owner-friendly, and concise.
-- Prefer clear, actionable summaries over technical database jargon.`;
+CORE PRINCIPLES:
+1. Strictly Read-Only: Cannot create, edit, or delete records. Direct users to the relevant UI tab if requested.
+2. Grounded & Factual: Answer strictly from provided active vehicle records. Never invent numbers, dates, or mechanical issues.
+3. Concise & Direct: For simple questions (odometer, last service, fuel, expenses, reminders), give direct 1-3 sentence answers without corporate fluff. Keep longer structured formatting ONLY for trip readiness or full vehicle audits.
+4. Odometer & 0 KM: 0 km is completely VALID for brand-new vehicles. State "Your current odometer is 0 km." Never treat 0 as missing.
+5. Missing Data: If a record is empty or not logged, clearly state: "No [services/fuel/documents/expenses] recorded in AutoCare yet."
+6. Safety Boundary: Digital records supplement but never replace physical mechanical inspections. Never claim definitive mechanical health.
+7. Fuel Cost & Litres: Mention both total litres and cost when answering fuel log queries.
+8. Tone: Warm, professional, concise, owner-friendly.`;
 
 // Helper: Parse YYYY-MM-DD or ISO strings into local date
 function parseLocalDate(dateString: string): Date {
@@ -1112,38 +1029,52 @@ app.post('/api/ai/chat', async (req: Request, res: Response) => {
     }
 
     // 3. Retrieve Vehicle Collections strictly scoped by userId and vehicleId
-    let documents = await fetchUserVehicleCollection('documents', authenticatedUid, vehicleId, idToken);
-    let services = await fetchUserVehicleCollection('serviceRecords', authenticatedUid, vehicleId, idToken);
-    let fuelRecords = await fetchUserVehicleCollection('fuelRecords', authenticatedUid, vehicleId, idToken);
-    let expenses = await fetchUserVehicleCollection('expenses', authenticatedUid, vehicleId, idToken);
-    let reminders = await fetchUserVehicleCollection('reminders', authenticatedUid, vehicleId, idToken);
+    // Optimization: Parallelize collection requests instead of sequential blocking calls
+    let documents: any[] = [];
+    let services: any[] = [];
+    let fuelRecords: any[] = [];
+    let expenses: any[] = [];
+    let reminders: any[] = [];
 
-    // If REST returned empty due to rules/environment and client data is provided,
-    // strictly validate that every record in clientVehicleData matches authenticatedUid AND vehicleId
-    if (documents.length === 0 && Array.isArray(clientVehicleData?.documents)) {
+    // If client vehicle data is complete and authentic, use it directly to bypass 5 sequential/parallel REST calls
+    const hasClientCollections =
+      clientVehicleData &&
+      Array.isArray(clientVehicleData.documents) &&
+      Array.isArray(clientVehicleData.services) &&
+      Array.isArray(clientVehicleData.fuelRecords) &&
+      Array.isArray(clientVehicleData.expenses) &&
+      Array.isArray(clientVehicleData.reminders);
+
+    if (hasClientCollections) {
       documents = clientVehicleData.documents.filter(
         (d: any) => d.userId === authenticatedUid && d.vehicleId === vehicleId
       );
-    }
-    if (services.length === 0 && Array.isArray(clientVehicleData?.services)) {
       services = clientVehicleData.services.filter(
         (s: any) => s.userId === authenticatedUid && s.vehicleId === vehicleId
       );
-    }
-    if (fuelRecords.length === 0 && Array.isArray(clientVehicleData?.fuelRecords)) {
       fuelRecords = clientVehicleData.fuelRecords.filter(
         (f: any) => f.userId === authenticatedUid && f.vehicleId === vehicleId
       );
-    }
-    if (expenses.length === 0 && Array.isArray(clientVehicleData?.expenses)) {
       expenses = clientVehicleData.expenses.filter(
         (e: any) => e.userId === authenticatedUid && e.vehicleId === vehicleId
       );
-    }
-    if (reminders.length === 0 && Array.isArray(clientVehicleData?.reminders)) {
       reminders = clientVehicleData.reminders.filter(
         (r: any) => r.userId === authenticatedUid && (r.vehicleId === vehicleId || !r.vehicleId)
       );
+    } else {
+      // Parallelize Firestore REST requests
+      const [docsRes, servRes, fuelRes, expRes, remRes] = await Promise.all([
+        fetchUserVehicleCollection('documents', authenticatedUid, vehicleId, idToken),
+        fetchUserVehicleCollection('serviceRecords', authenticatedUid, vehicleId, idToken),
+        fetchUserVehicleCollection('fuelRecords', authenticatedUid, vehicleId, idToken),
+        fetchUserVehicleCollection('expenses', authenticatedUid, vehicleId, idToken),
+        fetchUserVehicleCollection('reminders', authenticatedUid, vehicleId, idToken),
+      ]);
+      documents = docsRes;
+      services = servRes;
+      fuelRecords = fuelRes;
+      expenses = expRes;
+      reminders = remRes;
     }
 
     // Build structured, read-only vehicle context string
@@ -1166,20 +1097,13 @@ app.post('/api/ai/chat', async (req: Request, res: Response) => {
       });
     }
 
-    const ai = new GoogleGenAI({
-      apiKey,
-      httpOptions: {
-        headers: {
-          'User-Agent': 'aistudio-build',
-        },
-      },
-    });
+    const ai = getCachedGenAI(apiKey);
 
     // Build conversation context from past turns
     const rawTurns: Array<{ role: string; parts: Array<{ text: string }> }> = [];
 
     if (Array.isArray(history)) {
-      const recentHistory = history.slice(-10);
+      const recentHistory = history.slice(-6);
       for (const item of recentHistory) {
         if (
           item &&
@@ -1228,9 +1152,9 @@ CURRENT ACTIVE VEHICLE DATA CONTEXT
 ${vehicleContextText}
 ==================================================`;
 
-    // Call Gemini using flash lite model with low temperature for factual precision and fallback
+    // Call Gemini using flash model with low temperature for factual precision and fallback
     let reply = '';
-    const modelsToTry = ['gemini-3.1-flash-lite', 'gemini-2.5-flash'];
+    const modelsToTry = ['gemini-3.8-flash', 'gemini-3.1-flash-lite'];
     let lastError: any = null;
 
     for (const modelName of modelsToTry) {
@@ -1241,6 +1165,7 @@ ${vehicleContextText}
           config: {
             systemInstruction: fullSystemInstruction,
             temperature: 0.2,
+            maxOutputTokens: 600,
           },
         });
         reply = result.text || 'I apologize, but I could not formulate a response. Please try again.';
@@ -1260,12 +1185,156 @@ ${vehicleContextText}
       throw lastError || new Error('No response from AI model');
     }
 
-    return res.json({ response: reply });
+    // Optional TTS generation if speak was requested
+    let audioBase64: string | null = null;
+    if (req.body.speak && reply) {
+      try {
+        const cleanSpeechText = reply
+          .replace(/[*#_`~]/g, '')
+          .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+          .replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '')
+          .trim()
+          .slice(0, 800);
+
+        const ttsResult = await ai.models.generateContent({
+          model: 'gemini-3.8-flash-lite-tts',
+          contents: [
+            {
+              role: 'user',
+              parts: [
+                {
+                  text: cleanSpeechText,
+                  speechMetadata: {
+                    style: 'Friendly, professional, calm automotive female assistant',
+                  },
+                },
+              ],
+            },
+          ],
+          config: {
+            responseModalities: ['AUDIO'],
+            speechConfig: {
+              voiceConfig: {
+                prebuiltVoiceConfig: { voiceName: 'Kore' },
+              },
+            },
+          },
+        });
+        audioBase64 = ttsResult.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || null;
+      } catch (ttsErr: any) {
+        console.warn('Gemini TTS generation in /api/ai/chat failed (fallback available):', ttsErr?.message || ttsErr);
+      }
+    }
+
+    return res.json({ response: reply, audioBase64 });
   } catch (error: any) {
     console.error('Server error handling Gemini request:', error?.message || error);
     return res.status(500).json({
       error: "Sorry, I couldn't process that request right now. Please try again.",
     });
+  }
+});
+
+// Dedicated endpoint to synthesize natural AI speech for any text using Gemini TTS (voice: Kore)
+app.post('/api/ai/speak', async (req: Request, res: Response) => {
+  try {
+    const { text } = req.body;
+    if (!text || typeof text !== 'string' || !text.trim()) {
+      return res.status(400).json({ error: 'Text is required for speech synthesis' });
+    }
+
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return res.status(503).json({ error: 'Gemini API key is not configured' });
+    }
+
+    const ai = new GoogleGenAI({
+      apiKey,
+      httpOptions: { headers: { 'User-Agent': 'aistudio-build' } },
+    });
+
+    const cleanSpeechText = text
+      .replace(/[*#_`~]/g, '')
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+      .replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '')
+      .trim()
+      .slice(0, 800);
+
+    const ttsResult = await ai.models.generateContent({
+      model: 'gemini-3.8-flash-lite-tts',
+      contents: [
+        {
+          role: 'user',
+          parts: [
+            {
+              text: cleanSpeechText,
+              speechMetadata: {
+                style: 'Friendly, professional, calm automotive female assistant',
+              },
+            },
+          ],
+        },
+      ],
+      config: {
+        responseModalities: ['AUDIO'],
+        speechConfig: {
+          voiceConfig: {
+            prebuiltVoiceConfig: { voiceName: 'Kore' },
+          },
+        },
+      },
+    });
+
+    const audioBase64 = ttsResult.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+    if (!audioBase64) {
+      return res.status(500).json({ error: 'Could not generate audio response' });
+    }
+
+    return res.json({ audioBase64, mimeType: 'audio/wav' });
+  } catch (err: any) {
+    console.error('Error in /api/ai/speak:', err?.message || err);
+    return res.status(500).json({ error: 'Speech generation failed' });
+  }
+});
+
+// Dedicated audio transcription fallback endpoint using gemini-3.5-transcribe
+app.post('/api/ai/transcribe', async (req: Request, res: Response) => {
+  try {
+    const { audioBase64, mimeType } = req.body;
+    if (!audioBase64 || typeof audioBase64 !== 'string') {
+      return res.status(400).json({ error: 'Audio data is required' });
+    }
+
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return res.status(503).json({ error: 'Gemini API not configured' });
+    }
+
+    const ai = new GoogleGenAI({
+      apiKey,
+      httpOptions: { headers: { 'User-Agent': 'aistudio-build' } },
+    });
+
+    const result = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: {
+        parts: [
+          {
+            inlineData: {
+              mimeType: mimeType || 'audio/webm',
+              data: audioBase64,
+            },
+          },
+          { text: 'Transcribe this vehicle or automotive question accurately. Output ONLY the recognized text with no commentary.' },
+        ],
+      },
+    });
+
+    const transcript = result.text?.trim() || '';
+    return res.json({ transcript });
+  } catch (err: any) {
+    console.error('Error in /api/ai/transcribe:', err?.message || err);
+    return res.status(500).json({ error: 'Audio transcription failed' });
   }
 });
 
@@ -1287,8 +1356,230 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`AutoCare server running on http://0.0.0.0:${PORT}`);
+  // Create HTTP server instance to attach Express & WebSocketServer
+  const httpServer = http.createServer(app);
+
+  // Real-Time Gemini Live API WebSocket endpoint (/live)
+  const wss = new WebSocketServer({ server: httpServer, path: '/live' });
+
+  wss.on('connection', (clientWs: WebSocket) => {
+    let liveSession: any = null;
+    let isAuthenticated = false;
+
+    clientWs.on('message', async (data: Buffer | string) => {
+      try {
+        const payload = JSON.parse(data.toString());
+
+        if (payload.type === 'setup') {
+          const { idToken, vehicleContextText } = payload;
+          if (!idToken) {
+            clientWs.send(
+              JSON.stringify({
+                type: 'error',
+                error: 'Authentication required. Please sign in to ask about your vehicles.',
+                category: 'AUTH_REQUIRED',
+                status: 401,
+              })
+            );
+            clientWs.close(4401, 'Authentication required');
+            return;
+          }
+
+          const uid = await verifyUserToken(idToken);
+          if (!uid) {
+            clientWs.send(
+              JSON.stringify({
+                type: 'error',
+                error: 'Invalid or expired authentication session. Please sign in again.',
+                category: 'AUTH_INVALID',
+                status: 401,
+              })
+            );
+            clientWs.close(4401, 'Invalid authentication session');
+            return;
+          }
+
+          isAuthenticated = true;
+
+          const apiKey = process.env.GEMINI_API_KEY;
+          if (!apiKey) {
+            clientWs.send(
+              JSON.stringify({
+                type: 'error',
+                error: 'Gemini API key is not configured on the server.',
+                category: 'API_KEY_MISSING',
+                status: 500,
+              })
+            );
+            clientWs.close(4500, 'Gemini API not configured');
+            return;
+          }
+
+          const ai = getCachedGenAI(apiKey);
+
+          // Connect to Gemini Live API using model gemini-3.8-live
+          const livePrompt = `You are AutoCare AI, the conversational, warm voice co-pilot inside AutoCare.
+Keep responses concise, conversational, and direct (1-3 sentences) suitable for hands-free listening while driving or checking vehicles.
+You have read-only access to the user's active vehicle data:
+${vehicleContextText || 'Active vehicle selected.'}
+Current odometer is valid even if 0 km. Never invent unrecorded numbers.`;
+
+          try {
+            liveSession = await ai.live.connect({
+              model: 'gemini-3.8-live',
+              config: {
+                responseModalities: [Modality.AUDIO],
+                speechConfig: {
+                  voiceConfig: {
+                    prebuiltVoiceConfig: { voiceName: payload.voiceName || 'Zephyr' },
+                  },
+                },
+                systemInstruction: livePrompt,
+                outputAudioTranscription: {},
+                inputAudioTranscription: {},
+              },
+              callbacks: {
+                onmessage: (message: LiveServerMessage) => {
+                  if (clientWs.readyState !== WebSocket.OPEN) return;
+
+                  // Stream 24kHz audio chunks to client
+                  const audio = message.serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
+                  if (audio) {
+                    clientWs.send(JSON.stringify({ audio }));
+                  }
+
+                  // Stream user input transcription
+                  const userText =
+                    message.serverContent?.interimInputTranscription?.text ||
+                    message.serverContent?.inputTranscription?.text;
+                  if (userText) {
+                    clientWs.send(
+                      JSON.stringify({
+                        speaker: 'user',
+                        transcript: userText,
+                        isFinal: Boolean(message.serverContent?.inputTranscription?.text),
+                      })
+                    );
+                  }
+
+                  // Stream model output transcription
+                  const modelText = message.serverContent?.outputTranscription?.text;
+                  if (modelText) {
+                    clientWs.send(
+                      JSON.stringify({
+                        speaker: 'model',
+                        transcript: modelText,
+                      })
+                    );
+                  }
+
+                  // Handle barge-in / interruption
+                  if (message.serverContent?.interrupted) {
+                    clientWs.send(JSON.stringify({ interrupted: true }));
+                  }
+
+                  // Handle turn completion
+                  if (message.serverContent?.turnComplete) {
+                    clientWs.send(JSON.stringify({ type: 'turn_complete' }));
+                  }
+                },
+                onclose: (ev: any) => {
+                  if (clientWs.readyState === WebSocket.OPEN) {
+                    clientWs.send(
+                      JSON.stringify({
+                        type: 'session_closed',
+                        code: ev?.code,
+                        reason: ev?.reason,
+                      })
+                    );
+                  }
+                },
+                onerror: (err: any) => {
+                  const rawMsg = err?.message || String(err);
+                  const isPermission = rawMsg.includes('403') || rawMsg.includes('PERMISSION_DENIED');
+                  console.warn('Gemini Live session error:', { message: rawMsg });
+                  if (clientWs.readyState === WebSocket.OPEN) {
+                    clientWs.send(
+                      JSON.stringify({
+                        type: 'error',
+                        error: isPermission
+                          ? 'Gemini Live permission denied (403).'
+                          : `Gemini Live error: ${rawMsg}`,
+                        category: isPermission ? 'GEMINI_PERMISSION_DENIED' : 'LIVE_SESSION_ERROR',
+                        status: isPermission ? 403 : 500,
+                      })
+                    );
+                  }
+                },
+              },
+            });
+
+            clientWs.send(JSON.stringify({ type: 'ready' }));
+          } catch (connErr: any) {
+            const rawMsg = connErr?.message || String(connErr);
+            const isPermission = rawMsg.includes('403') || rawMsg.includes('PERMISSION_DENIED');
+            const category = isPermission ? 'GEMINI_PERMISSION_DENIED' : 'LIVE_CONNECTION_FAILED';
+            console.error('Failed to connect to Gemini Live API:', {
+              message: rawMsg,
+              category,
+            });
+            clientWs.send(
+              JSON.stringify({
+                type: 'error',
+                error: isPermission
+                  ? 'Gemini Live API permission denied (403). Check API key permissions for Gemini Live.'
+                  : `Could not connect to Gemini Live: ${rawMsg}`,
+                category,
+                status: isPermission ? 403 : 500,
+              })
+            );
+            clientWs.close(isPermission ? 4403 : 4500, 'Gemini Live connect failed');
+          }
+        } else if (payload.type === 'audio' && isAuthenticated && liveSession) {
+          // Stream 16kHz PCM audio chunk to Gemini Live session
+          if (payload.audio) {
+            liveSession.sendRealtimeInput({
+              audio: {
+                data: payload.audio,
+                mimeType: 'audio/pcm;rate=16000',
+              },
+            });
+          }
+        } else if (payload.type === 'text' && isAuthenticated && liveSession && payload.text) {
+          liveSession.sendRealtimeInput({
+            text: payload.text,
+          });
+        } else if (payload.type === 'ping') {
+          clientWs.send(JSON.stringify({ type: 'pong' }));
+        } else if (payload.type === 'end') {
+          if (liveSession) {
+            try {
+              liveSession.close?.();
+            } catch {}
+            liveSession = null;
+          }
+        }
+      } catch (err: any) {
+        console.warn('Error handling WebSocket message in /live:', err?.message || err);
+      }
+    });
+
+    clientWs.on('error', (wsErr) => {
+      console.warn('WebSocket client error:', wsErr?.message || wsErr);
+    });
+
+    clientWs.on('close', () => {
+      if (liveSession) {
+        try {
+          liveSession.close?.();
+        } catch {}
+        liveSession = null;
+      }
+    });
+  });
+
+  httpServer.listen(PORT, '0.0.0.0', () => {
+    console.log(`AutoCare server running on http://0.0.0.0:${PORT} (Express + WebSocket Live API)`);
   });
 }
 

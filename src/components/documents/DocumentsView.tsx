@@ -215,9 +215,9 @@ export const DocumentsView: React.FC = () => {
         rightAction={
           <button
             onClick={() => setIsAddOpen(true)}
-            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#00D4C7] via-cyan-500 to-blue-600 hover:from-[#00D4C7] hover:to-blue-500 text-black hover:text-white font-bold text-sm shadow-lg shadow-[#00D4C7]/20 transition-all cursor-pointer btn-3d"
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#1677FF] hover:bg-[#2196FF] text-white font-bold text-sm shadow-lg shadow-[#1677FF]/25 transition-all cursor-pointer btn-3d"
           >
-            <Plus className="w-4 h-4 text-black group-hover:text-white" />
+            <Plus className="w-4 h-4 text-white" />
             <span>Add Document</span>
           </button>
         }
@@ -264,31 +264,31 @@ export const DocumentsView: React.FC = () => {
       )}
 
       {loadingDocuments ? (
-        <div className="flex flex-col items-center justify-center min-h-[300px] text-gray-400 space-y-3">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-cyan-400" />
-          <span className="text-xs uppercase font-semibold tracking-wider text-cyan-400">Loading documents...</span>
+        <div className="flex flex-col items-center justify-center min-h-[300px] text-[#A9B8CC] space-y-3">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#00D9FF]" />
+          <span className="text-xs uppercase font-semibold tracking-wider text-[#00D9FF] font-mono">Loading documents...</span>
         </div>
       ) : documents.length === 0 ? (
-        <div className="rounded-3xl border border-gray-800 bg-[#0d1017] p-12 text-center max-w-md mx-auto space-y-4">
-          <div className="w-16 h-16 rounded-2xl bg-cyan-950/40 border border-cyan-500/30 flex items-center justify-center mx-auto text-3xl">
-            📄
+        <div className="rounded-3xl border border-[#1D3552] bg-[#0F1F35] p-12 text-center max-w-md mx-auto space-y-4 card-3d">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#1677FF]/20 via-[#2196FF]/20 to-[#00D9FF]/20 border border-[#1677FF]/40 flex items-center justify-center mx-auto text-3xl shadow-lg shadow-[#1677FF]/15">
+            <FileText className="w-8 h-8 text-[#00D9FF]" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-white">No documents added yet</h3>
-            <p className="text-sm text-gray-400 mt-1 leading-relaxed">
-              Keep your important vehicle documents organized in one place.
+            <h3 className="text-lg font-bold text-white font-mono">No Documents Vaulted</h3>
+            <p className="text-sm text-[#A9B8CC] mt-1 leading-relaxed">
+              Keep your insurance policies, PUC emissions certificates, registration (RC), and driving licenses safe and organized with automated expiry alerts.
             </p>
           </div>
           <button
             onClick={() => setIsAddOpen(true)}
-            className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-sm shadow-lg shadow-cyan-500/20 transition-all cursor-pointer"
+            className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#1677FF] to-[#2196FF] hover:from-[#1360D4] hover:to-[#1677FF] text-white font-bold text-sm shadow-lg shadow-[#1677FF]/25 transition-all cursor-pointer btn-3d"
           >
-            + Add Document
+            + Add First Document
           </button>
         </div>
       ) : filteredDocuments.length === 0 ? (
-        <div className="rounded-2xl border border-gray-800 bg-[#0d1017] p-8 text-center text-xs text-gray-400">
-          No documents match your search query or filter. <button onClick={() => { setSearchQuery(''); setStatusFilter('All'); }} className="text-cyan-400 underline font-semibold ml-1">Reset Filters</button>
+        <div className="rounded-2xl border border-[#1D3552] bg-[#0F1F35] p-8 text-center text-xs text-[#A9B8CC]">
+          No documents match your search query or filter. <button onClick={() => { setSearchQuery(''); setStatusFilter('All'); }} className="text-[#00D9FF] hover:underline font-semibold ml-1 cursor-pointer">Reset Filters</button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
